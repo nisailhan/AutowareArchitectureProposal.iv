@@ -4,11 +4,13 @@ project(traffic_light_visualization)
 add_compile_options(-std=c++14)
 
 find_package(catkin REQUIRED COMPONENTS
+  autoware_lanelet2_msgs
   autoware_perception_msgs
   cv_bridge
   image_transport
   message_filters
   roscpp
+  lanelet2_extension
   sensor_msgs
   nodelet
 )
@@ -18,6 +20,15 @@ find_package(OpenCV REQUIRED)
 
 catkin_package(
   CATKIN_DEPENDS
+    autoware_lanelet2_msgs
+    autoware_perception_msgs
+    cv_bridge
+    image_transport
+    message_filters
+    roscpp
+    lanelet2_extension
+    sensor_msgs
+    nodelet
 )
 
 include_directories(
@@ -31,7 +42,7 @@ include_directories(
 ###########
 
 add_library(traffic_light_roi_visualizer_nodelet SHARED
-  src/nodelet.cpp
+  src/traffic_light_roi_visualizer/nodelet.cpp
 )
 
 add_dependencies(traffic_light_roi_visualizer_nodelet
@@ -45,7 +56,7 @@ target_link_libraries(traffic_light_roi_visualizer_nodelet
 )
 
 add_executable(traffic_light_roi_visualizer_node
-  src/node.cpp
+  src/traffic_light_roi_visualizer/node.cpp
 )
 
 add_dependencies(traffic_light_roi_visualizer_node
@@ -59,6 +70,21 @@ target_link_libraries(traffic_light_roi_visualizer_node
   ${OpenCV_LIBRARIES}
 )
 
+add_executable(traffic_light_map_visualizer_node
+  src/traffic_light_map_visualizer/node.cpp
+  src/traffic_light_map_visualizer/main.cpp
+)
+
+add_dependencies(traffic_light_map_visualizer_node
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
+
+target_link_libraries(traffic_light_map_visualizer_node
+  ${catkin_LIBRARIES}
+)
+
+
 #############
 ## Install ##
 #############
@@ -67,6 +93,7 @@ install(
   TARGETS
     traffic_light_roi_visualizer_node
     traffic_light_roi_visualizer_nodelet
+    traffic_light_map_visualizer_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

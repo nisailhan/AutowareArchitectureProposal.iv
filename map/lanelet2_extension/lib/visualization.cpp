@@ -92,7 +92,7 @@ void lightAsMarker(
 
   marker->header.frame_id = "map";
   marker->header.stamp = ros::Time();
-  marker->frame_locked - true;
+  marker->frame_locked = true;
   marker->ns = ns;
   marker->id = p.id();
   marker->lifetime = ros::Duration();
@@ -114,19 +114,24 @@ void lightAsMarker(
   marker->color.r = 0.0f;
   marker->color.g = 0.0f;
   marker->color.b = 0.0f;
-  marker->color.a = 0.999f;
+  marker->color.a = 0.3f;
 
-  if (isAttributeValue(p, "color", "red"))
-    marker->color.r = 1.0f;
-  else if (isAttributeValue(p, "color", "green"))
-    marker->color.g = 1.0f;
-  else if (isAttributeValue(p, "color", "yellow")) {
-    marker->color.r = 1.0f;
-    marker->color.g = 1.0f;
+  if (isAttributeValue(p, "color", "red")) {
+    marker->color.r = 0.3f;
+    marker->color.g = 0.0f;
+    marker->color.b = 0.0f;
+  } else if (isAttributeValue(p, "color", "green")) {
+    marker->color.r = 0.0f;
+    marker->color.g = 0.3f;
+    marker->color.b = 0.0f;
+  } else if (isAttributeValue(p, "color", "yellow")) {
+    marker->color.r = 0.3f;
+    marker->color.g = 0.3f;
+    marker->color.b = 0.0f;
   } else {
-    marker->color.r = 1.0f;
-    marker->color.g = 1.0f;
-    marker->color.b = 1.0f;
+    marker->color.r = 0.3f;
+    marker->color.g = 0.3f;
+    marker->color.b = 0.3f;
   }
 }
 
