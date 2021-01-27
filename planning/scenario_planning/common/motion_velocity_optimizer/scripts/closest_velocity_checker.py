@@ -67,7 +67,7 @@ class VelocityChecker:
 
         # control commands
         self.sub_control_cmd = rospy.Subscriber(
-            "/control/control_cmd", ControlCommandStamped, self.CallBackControlCmd, queue_size=1, tcp_nodelay=True
+            "/control/trajectory_follower/control_cmd", ControlCommandStamped, self.CallBackControlCmd, queue_size=1, tcp_nodelay=True
         )
         self.sub_vehicle_cmd = rospy.Subscriber(
             "/control/vehicle_cmd", VehicleCommand, self.CallBackVehicleCmd, queue_size=1, tcp_nodelay=True
