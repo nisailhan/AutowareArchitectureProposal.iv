@@ -13,6 +13,14 @@ add_message_files(
     GateMode.msg
     ControlCommand.msg
     ControlCommandStamped.msg
+    RemoteCommandSelectorMode.msg
+)
+
+## Generate services in the 'srv' folder
+add_service_files(
+  DIRECTORY srv
+  FILES
+    RemoteCommandSelect.srv
 )
 
 ## Generate added messages and services with any dependencies listed here

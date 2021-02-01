@@ -34,10 +34,6 @@
 
 #include <autoware_joy_controller/joy_converter/joy_converter_base.h>
 
-// tmp
-#include <autoware_vehicle_msgs/RawVehicleCommand.h>
-#include <autoware_vehicle_msgs/VehicleCommand.h>
-
 namespace autoware_joy_controller
 {
 using ShiftType = autoware_vehicle_msgs::Shift::_data_type;
@@ -109,12 +105,6 @@ private:
   ShiftType prev_shift_ = autoware_vehicle_msgs::Shift::NONE;
   TurnSignalType prev_turn_signal_ = autoware_vehicle_msgs::TurnSignal::NONE;
   GateModeType prev_gate_mode_ = autoware_control_msgs::GateMode::AUTO;
-
-  // tmp
-  ros::Publisher pub_vehicle_command_;
-  ros::Publisher pub_raw_vehicle_command_;
-  void publishVehicleCommand();
-  void publishRawVehicleCommand();
 
   // Timer
   ros::Timer timer_;
