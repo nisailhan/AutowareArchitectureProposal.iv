@@ -1,13 +1,14 @@
 <launch>
   <arg name="joy_type" default="DS4" doc="options: DS4, G29"/>
+  <arg name="external_cmd_source" default="local" doc="options: local, remote"/>
 
   <arg name="input_joy" default="/joy" />
   <arg name="input_twist" default="/localization/twist" />
 
-  <arg name="output_control_command" default="/external/remote/joy/control_cmd" />
-  <arg name="output_raw_control_command" default="/external/remote/raw_control_cmd" />
-  <arg name="output_shift" default="/external/remote/shift_cmd" />
-  <arg name="output_turn_signal" default="/external/remote/turn_signal_cmd" />
+  <arg name="output_control_command" default="/external/$(arg external_cmd_source)/joy/control_cmd" />
+  <arg name="output_raw_control_command" default="/external/$(arg external_cmd_source)/raw_control_cmd" />
+  <arg name="output_shift" default="/external/$(arg external_cmd_source)/shift_cmd" />
+  <arg name="output_turn_signal" default="/external/$(arg external_cmd_source)/turn_signal_cmd" />
   <arg name="output_gate_mode" default="/remote/gate_mode_cmd" />
   <arg name="output_emergency_stop" default="/remote/emergency_stop" />
   <arg name="output_autoware_engage" default="/autoware/engage" />
