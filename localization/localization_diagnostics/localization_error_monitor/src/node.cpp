@@ -64,7 +64,7 @@ visualization_msgs::Marker LocalizationErrorMonitor::createEllipseMarker(
   const double ellipse_short_radius = std::min(ellipse.short_radius, 30.0);
   visualization_msgs::Marker marker;
   marker.header = pose_with_cov.header;
-  marker.header.stamp = ros::Time();
+  marker.header.stamp = ros::Time::now();
   marker.ns = "error_ellipse";
   marker.id = 0;
   marker.type = visualization_msgs::Marker::SPHERE;
