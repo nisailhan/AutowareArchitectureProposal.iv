@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Tier IV, Inc. All rights reserved.
+ * Copyright 2021 Tier IV, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,19 +12,23 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
-#ifndef SUCCESSIVE_SHORTEST_PATH_H_
-#define SUCCESSIVE_SHORTEST_PATH_H_
 
-#include <unordered_map>
-#include <vector>
+#pragma once
 
-namespace assignment_problem
+#include <multi_object_tracker/data_association/solver/gnn_solver_interface.hpp>
+
+namespace gnn_solver
 {
-// See IMPORTANT NOTE at the top of the file.
-void MaximizeLinearAssignment(
-  const std::vector<std::vector<double>> & cost, std::unordered_map<int, int> * direct_assignment,
-  std::unordered_map<int, int> * reverse_assignment);
-}  // namespace assignment_problem
+class SSP : public GnnSolverInterface
+{
+public:
+  SSP() = default;
+  ~SSP() = default;
 
-#endif  // SUCCESSIVE_SHORTEST_PATH_H_
+  virtual void maximizeLinearAssignment(
+    const std::vector<std::vector<double>> & cost, std::unordered_map<int, int> * direct_assignment,
+    std::unordered_map<int, int> * reverse_assignment) override;
+};
+}

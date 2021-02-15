@@ -42,7 +42,18 @@ add_executable(multi_object_tracker_node
   src/tracker/model/pedestrian_tracker.cpp
   src/tracker/model/pedestrian_and_bicycle_tracker.cpp
   src/data_association/data_association.cpp
-  src/data_association/successive_shortest_path/successive_shortest_path.cpp
+)
+
+# add_library(successive_shortest_path STATIC
+#   src/data_association/successive_shortest_path/successive_shortest_path.cpp
+# )
+
+add_library(mu_successive_shortest_path STATIC
+  src/data_association/mu_successive_shortest_path/mu_successive_shortest_path_wrapper.cpp
+  src/data_association/mu_successive_shortest_path/impl/mussp.cpp
+  src/data_association/mu_successive_shortest_path/impl/graph.cpp
+  src/data_association/mu_successive_shortest_path/impl/node.cpp
+  src/data_association/mu_successive_shortest_path/impl/sink.cpp
 )
 
 add_dependencies(multi_object_tracker_node
@@ -50,7 +61,11 @@ add_dependencies(multi_object_tracker_node
   ${catkin_EXPORTED_TARGETS}
 )
 
-target_link_libraries(multi_object_tracker_node ${catkin_LIBRARIES})
+target_link_libraries(multi_object_tracker_node
+  ${catkin_LIBRARIES}
+  # successive_shortest_path
+  mu_successive_shortest_path
+)
 
 install(TARGETS multi_object_tracker_node
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

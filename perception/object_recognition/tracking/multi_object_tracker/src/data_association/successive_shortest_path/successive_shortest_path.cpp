@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "successive_shortest_path.h"
+#include <multi_object_tracker/data_association/solver/successive_shortest_path.hpp>
 
 // #include <algorithm>
 // #include <cstdio>
@@ -25,7 +25,7 @@
 #include <cassert>
 // #include <chrono>
 
-namespace assignment_problem
+namespace gnn_solver
 {
 struct ResidualEdge
 {
@@ -46,7 +46,7 @@ struct ResidualEdge
   }
 };
 
-void MaximizeLinearAssignment(
+void SSP::maximizeLinearAssignment(
   const std::vector<std::vector<double>> & cost, std::unordered_map<int, int> * direct_assignment,
   std::unordered_map<int, int> * reverse_assignment)
 {
@@ -386,4 +386,4 @@ void MaximizeLinearAssignment(
 
   return;
 }
-}  // namespace assignment_problem
+}  // namespace gnn_solver

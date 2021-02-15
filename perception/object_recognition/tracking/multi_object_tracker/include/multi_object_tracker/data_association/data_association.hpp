@@ -19,9 +19,12 @@
 #pragma once
 #include <autoware_perception_msgs/DynamicObjectWithFeatureArray.h>
 #include <list>
+#include <memory>
+#include <multi_object_tracker/data_association/solver/gnn_solver.hpp>
+#include <multi_object_tracker/tracker/tracker.hpp>
 #include <unordered_map>
 #include <vector>
-#include "multi_object_tracker/tracker/tracker.hpp"
+
 #define EIGEN_MPL2_ONLY
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -38,6 +41,7 @@ private:
   Eigen::MatrixXd max_area_matrix_;
   Eigen::MatrixXd min_area_matrix_;
   const double score_threshold_;
+  std::shared_ptr<gnn_solver::GnnSolverInterface> gnn_solver_ptr_;
 
 public:
   DataAssociation(
