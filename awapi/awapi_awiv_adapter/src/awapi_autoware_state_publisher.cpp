@@ -152,6 +152,7 @@ void AutowareIvAutowareStatePublisher::getHazardStatusInfo(
 
   // filter by state
   if (aw_info.autoware_state_ptr->state != autoware_system_msgs::AutowareState::Emergency) {
+    status->hazard_status.status.level = autoware_system_msgs::HazardStatus::NO_FAULT;
     status->hazard_status.status.diagnostics_spf = {};
     status->hazard_status.status.diagnostics_lf = {};
     status->hazard_status.status.diagnostics_sf = {};
@@ -159,6 +160,7 @@ void AutowareIvAutowareStatePublisher::getHazardStatusInfo(
 
   // filter by control_mode
   if (aw_info.control_mode_ptr->data == autoware_vehicle_msgs::ControlMode::MANUAL) {
+    status->hazard_status.status.level = autoware_system_msgs::HazardStatus::NO_FAULT;
     status->hazard_status.status.diagnostics_spf = {};
     status->hazard_status.status.diagnostics_lf = {};
     status->hazard_status.status.diagnostics_sf = {};
