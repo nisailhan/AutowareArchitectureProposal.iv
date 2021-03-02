@@ -29,6 +29,7 @@ AutowareIvAdapter::AutowareIvAdapter() : nh_(), pnh_("~"), tf_listener_(tf_buffe
   emergencyParamCheck(em_stop_param);
 
   // setup instance
+  autoware_api_service_ = std::make_unique<AutowareApiService>();
   vehicle_state_publisher_ = std::make_unique<AutowareIvVehicleStatePublisher>();
   autoware_state_publisher_ = std::make_unique<AutowareIvAutowareStatePublisher>();
   stop_reason_aggregator_ = std::make_unique<AutowareIvStopReasonAggregator>(
@@ -109,6 +110,9 @@ void AutowareIvAdapter::timerCallback(const ros::TimerEvent & e)
 {
   // get current pose
   getCurrentPose();
+
+  // update service data
+  autoware_api_service_->update(aw_info_);
 
   // publish vehicle state
   vehicle_state_publisher_->statePublisher(aw_info_);

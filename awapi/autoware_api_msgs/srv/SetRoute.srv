@@ -1,0 +1,4 @@
+autoware_planning_msgs/Route route
+---
+bool success
+string message

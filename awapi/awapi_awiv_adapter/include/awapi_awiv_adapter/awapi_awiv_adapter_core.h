@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <awapi_awiv_adapter/awapi_autoware_api_service.h>
 #include <awapi_awiv_adapter/awapi_autoware_state_publisher.h>
 #include <awapi_awiv_adapter/awapi_autoware_util.h>
 #include <awapi_awiv_adapter/awapi_lane_change_state_publisher.h>
@@ -111,6 +112,7 @@ private:
 
   // parameter
   AutowareInfo aw_info_;
+  std::unique_ptr<AutowareApiService> autoware_api_service_;
   std::unique_ptr<AutowareIvVehicleStatePublisher> vehicle_state_publisher_;
   std::unique_ptr<AutowareIvAutowareStatePublisher> autoware_state_publisher_;
   std::unique_ptr<AutowareIvStopReasonAggregator> stop_reason_aggregator_;

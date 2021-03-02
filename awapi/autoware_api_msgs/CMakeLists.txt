@@ -25,6 +25,16 @@ add_message_files(
     IntersectionStatus.msg
 )
 
+add_service_files(
+  DIRECTORY srv
+  FILES
+    SetInitialPose.srv
+    SetGoalPose.srv
+    SetRoute.srv
+    SetVehicleEngage.srv
+    SetEngage.srv
+)
+
 generate_messages(
   DEPENDENCIES
     std_msgs

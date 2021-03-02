@@ -33,6 +33,7 @@ include_directories(
 add_executable(awapi_awiv_adapter
   src/awapi_awiv_adapter_node.cpp
   src/awapi_awiv_adapter_core.cpp
+  src/awapi_autoware_api_service.cpp
   src/awapi_vehicle_state_publisher.cpp
   src/awapi_autoware_state_publisher.cpp
   src/awapi_stop_reason_aggregator.cpp
