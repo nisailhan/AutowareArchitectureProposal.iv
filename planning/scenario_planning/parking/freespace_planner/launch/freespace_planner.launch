@@ -32,6 +32,8 @@
     <param name="robot_width" value="1.75" />
     <param name="robot_base2back" value="1.0" />
     <param name="minimum_turning_radius" value="9.0" />
+    <param name="maximum_turning_radius" value="9.0" />
+    <param name="turning_radius_size" value="1" />
     <param name="theta_size" value="144" />
     <param name="angle_goal_range" value="6.0" />
     <param name="curve_weight" value="1.2" />

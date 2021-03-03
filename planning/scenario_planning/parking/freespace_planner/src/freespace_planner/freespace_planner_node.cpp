@@ -259,7 +259,12 @@ AstarNavi::AstarNavi() : nh_(), private_nh_("~"), tf_listener_(tf_buffer_)
     private_nh_.param<double>("robot_length", astar_param_.robot_shape.length, 4.5);
     private_nh_.param<double>("robot_width", astar_param_.robot_shape.width, 1.75);
     private_nh_.param<double>("robot_base2back", astar_param_.robot_shape.base2back, 1.0);
-    private_nh_.param<double>("minimum_turning_radius", astar_param_.minimum_turning_radius, 6.0);
+    private_nh_.param<double>("minimum_turning_radius", astar_param_.minimum_turning_radius, 0.5);
+    private_nh_.param<double>("maximum_turning_radius", astar_param_.maximum_turning_radius, 6.0);
+    private_nh_.param<int>("turning_radius_size", astar_param_.turning_radius_size, 11);
+    astar_param_.maximum_turning_radius = std::max(astar_param_.maximum_turning_radius,
+                                                   astar_param_.minimum_turning_radius);
+    astar_param_.turning_radius_size = std::max(astar_param_.turning_radius_size, 1);
 
     // search configs
     private_nh_.param<int>("theta_size", astar_param_.theta_size, 48);
