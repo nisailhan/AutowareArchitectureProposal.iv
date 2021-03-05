@@ -72,5 +72,6 @@ install(FILES nodelets.xml
 install(
   DIRECTORY
     launch
+    config
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
