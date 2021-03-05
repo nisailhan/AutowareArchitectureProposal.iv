@@ -234,7 +234,9 @@ bool AutowareApiService::onSetVehicleEngageService(
   // No condition is required because vehicles always can be activated
 
   // Set data
-  pub_vehicle_engage_.publish(req.engage);
+  std_msgs::Bool b;
+  b.data = req.engage;
+  pub_vehicle_engage_.publish(b);
 
   // Check result
   // TODO(Kenji Miyake): Implement
@@ -263,8 +265,10 @@ bool AutowareApiService::onSetEngageService(
     max_velocity.data = prev_max_velocity_;
     pub_max_velocity_.publish(max_velocity);
 
-    pub_autoware_engage_.publish(req.engage);
-    pub_vehicle_engage_.publish(req.engage);
+    std_msgs::Bool b;
+    b.data = req.engage;
+    pub_autoware_engage_.publish(b);
+    pub_vehicle_engage_.publish(b);
 
     // Check result
     // TODO(Kenji Miyake): Implement
