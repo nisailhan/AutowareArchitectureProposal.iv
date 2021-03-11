@@ -8,7 +8,7 @@ In this package, mussp[1] is used as solver.
 In addition, when associating observations to tracers, data association have gates such as the area of the object from the BEV, Mahalanobis distance, and maximum distance, depending on the class label.
 
 ## EKF Tracker
-Models for pedestrians, bicycles (motorcycles), and cars are available.
+Models for pedestrians, bicycles (motorcycles), cars and unknown are available.
 The pedestrian or bicycle tracker is running at the same time as the respective EKF model in order to enable the transition between pedestrian and bicycle tracking.
 For big vehicles such as trucks and buses, we have separate models for passenger cars and large vehicles because they are difficult to distinguish from passenger cars and are not stable. Therefore, separate models are prepared for passenger cars and big vehicles, and these models are run at the same time as the respective EKF models to ensure stability.
 

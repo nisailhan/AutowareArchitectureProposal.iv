@@ -41,6 +41,7 @@ add_executable(multi_object_tracker_node
   src/tracker/model/bicycle_tracker.cpp
   src/tracker/model/pedestrian_tracker.cpp
   src/tracker/model/pedestrian_and_bicycle_tracker.cpp
+  src/tracker/model/unknown_tracker.cpp
   src/data_association/data_association.cpp
 )
 
