@@ -42,6 +42,13 @@ add_executable(pacmod_additional_debug_publisher
 target_link_libraries(pacmod_additional_debug_publisher ${catkin_LIBRARIES})
 add_dependencies(pacmod_additional_debug_publisher ${catkin_EXPORTED_TARGETS})
 
+add_executable(pacmod_dynamic_parameter_changer
+  src/pacmod_dynamic_parameter_changer/pacmod_dynamic_parameter_changer_node.cpp
+  src/pacmod_dynamic_parameter_changer/pacmod_dynamic_parameter_changer_main.cpp
+)
+target_link_libraries(pacmod_dynamic_parameter_changer ${catkin_LIBRARIES})
+add_dependencies(pacmod_dynamic_parameter_changer ${catkin_EXPORTED_TARGETS})
+
 add_executable(ssc_interface
   src/ssc_interface/ssc_interface_node.cpp
   src/ssc_interface/ssc_interface.cpp
@@ -69,6 +76,12 @@ install(TARGETS pacmod_interface
 )
 
 install(TARGETS pacmod_additional_debug_publisher
+ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(TARGETS pacmod_dynamic_parameter_changer
 ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
