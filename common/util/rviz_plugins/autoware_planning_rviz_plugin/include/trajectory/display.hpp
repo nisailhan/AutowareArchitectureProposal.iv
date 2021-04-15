@@ -28,6 +28,7 @@
 #include <rviz/properties/color_property.h>
 #include <rviz/properties/float_property.h>
 #include <rviz/validate_floats.h>
+#include <rviz/ogre_helpers/movable_text.h>
 
 #include <deque>
 #include <memory>
@@ -59,12 +60,16 @@ protected:
     const QColor & color_min, const QColor & color_max, const double ratio);
   Ogre::ManualObject * path_manual_object_;
   Ogre::ManualObject * velocity_manual_object_;
+  std::vector<rviz::MovableText*> velocity_texts_;
+  std::vector<Ogre::SceneNode*> velocity_text_nodes_;
   rviz::BoolProperty * property_path_view_;
   rviz::BoolProperty * property_velocity_view_;
   rviz::FloatProperty * property_path_width_;
   rviz::ColorProperty * property_path_color_;
   rviz::ColorProperty * property_velocity_color_;
   rviz::FloatProperty * property_velocity_scale_;
+  rviz::BoolProperty * property_velocity_text_view_;
+  rviz::FloatProperty * property_velocity_text_scale_;
   rviz::FloatProperty * property_path_alpha_;
   rviz::FloatProperty * property_velocity_alpha_;
   rviz::BoolProperty * property_path_color_view_;
