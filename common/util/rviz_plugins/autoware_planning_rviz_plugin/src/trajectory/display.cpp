@@ -187,7 +187,7 @@ void AutowareTrajectoryDisplay::processMessage(
       for (size_t i = velocity_texts_.size(); i < msg_ptr->points.size(); i++) {
         Ogre::SceneNode* node = scene_node_->createChildSceneNode();
         rviz::MovableText* text = new rviz::MovableText("not initialized", "Liberation Sans", 0.1);
-        text->setVisible(true);
+        text->setVisible(false);
         text->setTextAlignment(rviz::MovableText::H_CENTER, rviz::MovableText::V_ABOVE);
         node->attachObject(text);
         velocity_texts_.push_back(text);
@@ -286,9 +286,11 @@ void AutowareTrajectoryDisplay::processMessage(
         rviz::MovableText* text = velocity_texts_.at(point_idx);
         double vel = path_point.twist.linear.x;
         text->setCaption(std::to_string(static_cast<int>(std::floor(vel))) + "." + std::to_string(static_cast<int>(std::floor(vel * 100))));
-        text->setVisible(true);
-
         text->setCharacterHeight(property_velocity_text_scale_->getFloat());
+        text->setVisible(true);
+      } else {
+        rviz::MovableText* text = velocity_texts_.at(point_idx);
+        text->setVisible(false);
       }
     }
 
