@@ -217,8 +217,8 @@ bool NormalVehicleTracker::measureWithPose(const autoware_perception_msgs::Dynam
     object.semantic.type == autoware_perception_msgs::Semantic::BUS) {
     constexpr float measurement_noise_stddev_pos_x = 8.0;  // [m]
     constexpr float measurement_noise_stddev_pos_y = 0.8;  // [m]
-    measurement_noise_covariance_pos_x_ = std::pow(measurement_noise_stddev_pos_x, 2.0);
-    measurement_noise_covariance_pos_y_ = std::pow(measurement_noise_stddev_pos_y, 2.0);
+    measurement_noise_covariance_pos_x = std::pow(measurement_noise_stddev_pos_x, 2.0);
+    measurement_noise_covariance_pos_y = std::pow(measurement_noise_stddev_pos_y, 2.0);
   } else {
     measurement_noise_covariance_pos_x = measurement_noise_covariance_pos_x_;
     measurement_noise_covariance_pos_y = measurement_noise_covariance_pos_y_;
