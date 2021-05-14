@@ -23,7 +23,6 @@ MPCFollower::MPCFollower() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_)
 {
   pnh_.param<double>("ctrl_period", ctrl_period_, 0.03);
   pnh_.param<bool>("enable_path_smoothing", enable_path_smoothing_, true);
-  pnh_.param<bool>("enable_yaw_recalculation", enable_yaw_recalculation_, false);
   pnh_.param<bool>("use_steer_prediction", use_steer_prediction_, false);
   pnh_.param<int>("path_filter_moving_ave_num", path_filter_moving_ave_num_, 35);
   pnh_.param<int>("curvature_smoothing_num", curvature_smoothing_num_, 35);
@@ -893,10 +892,8 @@ void MPCFollower::onTrajectory(const autoware_planning_msgs::Trajectory::ConstPt
   }
 
   /* calculate yaw angle */
-  if (enable_yaw_recalculation_) {
-    MPCUtils::calcTrajectoryYawFromXY(&mpc_traj_smoothed);
-    MPCUtils::convertEulerAngleToMonotonic(&mpc_traj_smoothed.yaw);
-  }
+  MPCUtils::calcTrajectoryYawFromXY(&mpc_traj_smoothed);
+  MPCUtils::convertEulerAngleToMonotonic(&mpc_traj_smoothed.yaw);
 
   /* calculate curvature */
   MPCUtils::calcTrajectoryCurvature(curvature_smoothing_num_, &mpc_traj_smoothed);
