@@ -207,7 +207,12 @@ void MapBasedDetector::routeCallback(const autoware_planning_msgs::Route::ConstP
   lanelet::ConstLanelets route_lanelets;
   for (const auto & route_section : input_msg->route_sections) {
     for (const auto & lane_id : route_section.lane_ids) {
-      route_lanelets.push_back(lanelet_map_ptr_->laneletLayer.get(lane_id));
+      try {
+        route_lanelets.push_back(lanelet_map_ptr_->laneletLayer.get(lane_id));
+      } catch (...) {
+        ROS_ERROR("Cannot find lane id (%d).", lane_id);
+        return;
+      }
     }
   }
   std::vector<lanelet::AutowareTrafficLightConstPtr> route_lanelet_traffic_lights =
