@@ -321,7 +321,7 @@ bool PedestrianTracker::getEstimatedDynamicObject(
   // predict state
   KalmanFilter tmp_ekf_for_no_update = ekf_;
   const double dt = (time - last_update_time_).toSec();
-  predict(dt, tmp_ekf_for_no_update);
+  if (0.001 /*1msec*/ < dt) predict(dt, tmp_ekf_for_no_update);
   Eigen::MatrixXd X_t(dim_x_, 1);     // predicted state
   Eigen::MatrixXd P(dim_x_, dim_x_);  // predicted state
   tmp_ekf_for_no_update.getX(X_t);

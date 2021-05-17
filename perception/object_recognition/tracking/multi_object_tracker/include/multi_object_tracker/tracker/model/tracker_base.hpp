@@ -51,9 +51,7 @@ public:
   {
     return (ros::Time::now() - last_update_with_measurement_time_).toSec();
   }
-  virtual geometry_msgs::Point getPosition(const ros::Time & time);
-  virtual Eigen::Matrix2d getXYCovariance(const ros::Time & time);
-  virtual double getArea(const ros::Time & time);
+  virtual geometry_msgs::PoseWithCovariance getPoseWithCovariance(const ros::Time & time);
 
   /*
    *　Pure virtual function

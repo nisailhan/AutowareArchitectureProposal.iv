@@ -13,8 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- *
- * v1.0 Yukihiro Saito
  */
 
 #include "multi_object_tracker/tracker/model/tracker_base.hpp"
@@ -45,31 +43,9 @@ bool Tracker::updateWithoutMeasurement()
   return true;
 }
 
-geometry_msgs::Point Tracker::getPosition(const ros::Time & time)
+geometry_msgs::PoseWithCovariance Tracker::getPoseWithCovariance(const ros::Time & time)
 {
   autoware_perception_msgs::DynamicObject object;
   getEstimatedDynamicObject(time, object);
-  geometry_msgs::Point position;
-  position.x = object.state.pose_covariance.pose.position.x;
-  position.y = object.state.pose_covariance.pose.position.y;
-  position.z = object.state.pose_covariance.pose.position.z;
-  return position;
-}
-
-Eigen::Matrix2d Tracker::getXYCovariance(const ros::Time & time)
-{
-  autoware_perception_msgs::DynamicObject object;
-  getEstimatedDynamicObject(time, object);
-  Eigen::Matrix2d covariance;
-  covariance << object.state.pose_covariance.covariance[0],
-    object.state.pose_covariance.covariance[1], object.state.pose_covariance.covariance[6],
-    object.state.pose_covariance.covariance[7];
-  return covariance;
-}
-
-double Tracker::getArea(const ros::Time & time)
-{
-  autoware_perception_msgs::DynamicObject object;
-  getEstimatedDynamicObject(time, object);
-  return utils::getArea(object.shape);
+  return object.state.pose_covariance;
 }

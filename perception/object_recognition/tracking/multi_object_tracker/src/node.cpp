@@ -13,8 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- *
- * v1.0 Yukihiro Saito
  */
 
 #include "multi_object_tracker/node.hpp"
@@ -46,8 +44,10 @@ MultiObjectTrackerNode::MultiObjectTrackerNode() : nh_(""), pnh_("~"), tf_listen
   pnh_.getParam("max_area_matrix", max_area_matrix);
   std::vector<double> min_area_matrix;
   pnh_.getParam("min_area_matrix", min_area_matrix);
+  std::vector<double> max_rad_matrix;
+  pnh_.getParam("max_rad_matrix", max_rad_matrix);
   data_association_ = std::make_unique<DataAssociation>(
-    can_assign_matrix, max_dist_matrix, max_area_matrix, min_area_matrix);
+    can_assign_matrix, max_dist_matrix, max_area_matrix, min_area_matrix, max_rad_matrix);
 }
 
 void MultiObjectTrackerNode::measurementCallback(
