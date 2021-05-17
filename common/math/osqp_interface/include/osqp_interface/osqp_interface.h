@@ -21,6 +21,7 @@
 #include <eigen3/Eigen/Core>
 #include <string>
 #include <vector>
+#include <memory>
 #include "osqp.h"
 
 namespace osqp
@@ -74,9 +75,9 @@ private:
   /*****************************
    * OSQP WORKSPACE STRUCTURES
    *****************************/
-  OSQPWorkspace * work;
-  OSQPSettings * settings;
-  OSQPData * data;
+  std::unique_ptr<OSQPWorkspace, std::function<void(OSQPWorkspace *)>> work;
+  std::unique_ptr<OSQPSettings> settings;
+  std::unique_ptr<OSQPData> data;
 
   // store last work info since work is cleaned up at every execution to prevent memory leak.
   OSQPInfo latest_work_info;
@@ -112,6 +113,8 @@ private:
   c_int exitflag;
 
   inline bool isEqual(double x, double y);
+
+  static void OSQPWorkspaceDeleter(OSQPWorkspace * ptr) noexcept;
 
 public:
   // Returns a flag for asserting interface condition (Healthy condition: 0).
@@ -154,7 +157,7 @@ public:
   /****************
    * OPTIMIZATION
    ****************/
-  // Solves the stored convec quadratic program (QP) problem using the OSQP solver.
+  // Solves the stored convex quadratic program (QP) problem using the OSQP solver.
   //
   // The function returns a tuple containing the solution as two float vectors.
   // The first element of the tuple contains the 'primal' solution. The second element contains the 'lagrange
@@ -230,12 +233,12 @@ public:
   void updateVerbose(const bool verbose);
   void updateRhoInterval(const int rho_interval);
 
-  int getTakenIter() { return static_cast<int>(latest_work_info.iter); }
-  std::string getStatusMessage() { return static_cast<std::string>(latest_work_info.status); }
-  int getStatus() { return static_cast<int>(latest_work_info.status_val); }
-  int getStatusPolish() { return static_cast<int>(latest_work_info.status_polish); }
-  double getRunTime() { return static_cast<double>(latest_work_info.run_time); }
-  double getObjVal() { return static_cast<double>(latest_work_info.obj_val); }
+  int getTakenIter() {return static_cast<int>(latest_work_info.iter);}
+  std::string getStatusMessage() {return static_cast<std::string>(latest_work_info.status);}
+  int getStatus() {return static_cast<int>(latest_work_info.status_val);}
+  int getStatusPolish() {return static_cast<int>(latest_work_info.status_polish);}
+  double getRunTime() {return static_cast<double>(latest_work_info.run_time);}
+  double getObjVal() {return static_cast<double>(latest_work_info.obj_val);}
 };
 
 }  // namespace osqp

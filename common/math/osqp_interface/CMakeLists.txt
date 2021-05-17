@@ -48,3 +48,13 @@ install(
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 )
+
+# Test
+if (CATKIN_ENABLE_TESTING)
+  find_package(rostest REQUIRED)
+  add_rostest_gtest(osqp_interface_test test/osqp_interface_test.test test/src/osqp_interface_test.cpp)
+  target_link_libraries(osqp_interface_test
+    osqp_interface
+    ${catkin_LIBRARIES} -ldl
+  )
+endif()
