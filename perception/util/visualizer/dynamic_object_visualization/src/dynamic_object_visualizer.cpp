@@ -511,6 +511,7 @@ bool DynamicObjectVisualizer::calcCircleLineList(
     point.z = center.z;
     points.push_back(point);
   }
+  return true;
 }
 
 bool DynamicObjectVisualizer::calcPolygonLineList(

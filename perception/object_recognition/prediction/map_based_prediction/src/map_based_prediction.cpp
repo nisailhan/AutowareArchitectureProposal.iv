@@ -201,7 +201,7 @@ bool MapBasedPrediction::doLinearPrediction(
   return true;
 }
 
-bool MapBasedPrediction::normalizeLikelihood(
+void MapBasedPrediction::normalizeLikelihood(
   std::vector<autoware_perception_msgs::PredictedPath> & paths)
 {
   // TODO: is could not be the smartest way
@@ -293,7 +293,7 @@ bool MapBasedPrediction::getPredictedPath(
   return false;
 }
 
-bool MapBasedPrediction::getLinearPredictedPath(
+void MapBasedPrediction::getLinearPredictedPath(
   const geometry_msgs::Pose & object_pose, const geometry_msgs::Twist & object_twist,
   const std_msgs::Header & origin_header, autoware_perception_msgs::PredictedPath & predicted_path)
 {

@@ -57,7 +57,7 @@ private:
     const double target_s_position, const std_msgs::Header & origin_header, Spline2D & spline2d,
     autoware_perception_msgs::PredictedPath & path);
 
-  bool getLinearPredictedPath(
+  void getLinearPredictedPath(
     const geometry_msgs::Pose & object_pose, const geometry_msgs::Twist & object_twist,
     const std_msgs::Header & origin_header,
     autoware_perception_msgs::PredictedPath & predicted_path);
@@ -65,7 +65,7 @@ private:
   // double calculateLikelihood(const double desired_yaw, const double current_d, const double current_yaw);
   double calculateLikelihood(const double current_d);
 
-  bool normalizeLikelihood(std::vector<autoware_perception_msgs::PredictedPath> & paths);
+  void normalizeLikelihood(std::vector<autoware_perception_msgs::PredictedPath> & paths);
 
 public:
   MapBasedPrediction(
