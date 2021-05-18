@@ -1,0 +1,33 @@
+name: Generate documentation
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Generate docs
+        run: |
+          cd docs
+          sudo apt-get update
+          sudo apt-get install doxygen graphviz
+          doxygen Doxyfile
+
+      - name: Move generated files
+        run: |
+          sudo chmod 775 docs/html
+          mv docs/html public
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: 'public'
