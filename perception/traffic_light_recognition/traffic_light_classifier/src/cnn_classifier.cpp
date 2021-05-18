@@ -102,8 +102,9 @@ void CNNClassifier::outputDebugImage(
     if (i < states.size() - 1) label += ",";
   }
 
-  int expand_w = 200;
-  int expand_h = static_cast<int>((expand_w * debug_image.rows) / debug_image.cols);
+  const int expand_w = 200;
+  const int expand_h =
+    std::max(static_cast<int>((expand_w * debug_image.rows) / debug_image.cols), 1);
 
   cv::resize(debug_image, debug_image, cv::Size(expand_w, expand_h));
   cv::Mat text_img(cv::Size(expand_w, 50), CV_8UC3, cv::Scalar(0, 0, 0));
@@ -127,7 +128,7 @@ void CNNClassifier::preProcess(cv::Mat & image, std::vector<float> & input_tenso
 
   const size_t strides_cv[3] = {static_cast<size_t>(input_w_ * input_c_),
                                 static_cast<size_t>(input_c_), 1};
-  const size_t strides[3] = {static_cast<size_t>(input_h_ * input_w_), 
+  const size_t strides[3] = {static_cast<size_t>(input_h_ * input_w_),
                              static_cast<size_t>(input_w_), 1};
 
   for (int i = 0; i < input_h_; i++) {

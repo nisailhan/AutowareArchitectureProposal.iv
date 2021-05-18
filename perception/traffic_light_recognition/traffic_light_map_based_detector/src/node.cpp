@@ -142,8 +142,10 @@ bool MapBasedDetector::getTrafficLightRoi(
     const double image_u = (fx * camera_x + cx * camera_z) / camera_z;
     const double image_v = (fy * camera_y + cy * camera_z) / camera_z;
 
-    tl_roi.roi.x_offset = std::max(std::min(image_u, (double)camera_info.width), 0.0);
-    tl_roi.roi.y_offset = std::max(std::min(image_v, (double)camera_info.height), 0.0);
+    tl_roi.roi.x_offset = std::max(
+      std::min(image_u, static_cast<double>(static_cast<int>(camera_info.width) - 1)), 0.0);
+    tl_roi.roi.y_offset = std::max(
+      std::min(image_v, static_cast<double>(static_cast<int>(camera_info.height) - 1)), 0.0);
   }
 
   // for roi.width and roi.height
@@ -167,10 +169,10 @@ bool MapBasedDetector::getTrafficLightRoi(
     const double image_u = (fx * camera_x + cx * camera_z) / camera_z;
     const double image_v = (fy * camera_y + cy * camera_z) / camera_z;
     tl_roi.roi.width =
-      std::max(std::min(image_u, (double)camera_info.width), 0.0) - tl_roi.roi.x_offset;
+      std::max(std::min(image_u, static_cast<double>(camera_info.width)), 0.0) - tl_roi.roi.x_offset;
     tl_roi.roi.height =
-      std::max(std::min(image_v, (double)camera_info.height), 0.0) - tl_roi.roi.y_offset;
-    if (tl_roi.roi.width <= 0 || tl_roi.roi.height <= 0) return false;
+      std::max(std::min(image_v, static_cast<double>(camera_info.height)), 0.0) - tl_roi.roi.y_offset;
+    if (tl_roi.roi.width < 0 || tl_roi.roi.height < 0) return false;
   }
   return true;
 }
