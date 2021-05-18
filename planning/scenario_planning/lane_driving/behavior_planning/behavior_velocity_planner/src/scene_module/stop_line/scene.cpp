@@ -121,6 +121,7 @@ bool StopLineModule::modifyPathVelocity(
     if (!planner_data_->isVehicleStopping()) state_ = State::START;
     return true;
   }
+  return true;
 }
 
 bool StopLineModule::getBackwardPointFromBasePoint(
