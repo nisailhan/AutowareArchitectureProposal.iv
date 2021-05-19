@@ -184,7 +184,7 @@ visualization_msgs::MarkerArray createPathMarkerArray(
   return msg;
 }
 
-visualization_msgs::MarkerArray createVirtualWallMarkerArray(
+visualization_msgs::MarkerArray createVirtualStopWallMarkerArray(
   const geometry_msgs::Pose & pose, const int64_t lane_id, const std::string & stop_factor)
 {
   visualization_msgs::MarkerArray msg;
@@ -206,7 +206,7 @@ visualization_msgs::MarkerArray createVirtualWallMarkerArray(
   visualization_msgs::Marker marker_factor_text{};
   marker_factor_text.header.frame_id = "map";
   marker_factor_text.header.stamp = ros::Time::now();
-  marker_factor_text.ns = "factor_text";
+  marker_factor_text.ns = "stop_factor_text";
   marker_factor_text.id = lane_id;
   marker_factor_text.lifetime = ros::Duration(0.5);
   marker_factor_text.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
@@ -216,6 +216,43 @@ visualization_msgs::MarkerArray createVirtualWallMarkerArray(
   marker_factor_text.scale = createMarkerScale(0.0, 0.0, 1.0);
   marker_factor_text.color = createMarkerColor(1.0, 1.0, 1.0, 0.999);
   marker_factor_text.text = stop_factor;
+  msg.markers.push_back(marker_factor_text);
+
+  return msg;
+}
+
+visualization_msgs::MarkerArray createVirtualSlowWallMarkerArray(
+  const geometry_msgs::Pose & pose, const int64_t lane_id, const std::string & slow_factor)
+{
+  visualization_msgs::MarkerArray msg;
+
+  visualization_msgs::Marker marker_virtual_wall{};
+  marker_virtual_wall.header.frame_id = "map";
+  marker_virtual_wall.header.stamp = ros::Time::now();
+  marker_virtual_wall.ns = "slow_virtual_wall";
+  marker_virtual_wall.id = lane_id;
+  marker_virtual_wall.lifetime = ros::Duration(0.5);
+  marker_virtual_wall.type = visualization_msgs::Marker::CUBE;
+  marker_virtual_wall.action = visualization_msgs::Marker::ADD;
+  marker_virtual_wall.pose = pose;
+  marker_virtual_wall.pose.position.z += 1.0;
+  marker_virtual_wall.scale = createMarkerScale(0.1, 5.0, 2.0);
+  marker_virtual_wall.color = createMarkerColor(1.0, 1.0, 0.0, 0.5);
+  msg.markers.push_back(marker_virtual_wall);
+
+  visualization_msgs::Marker marker_factor_text{};
+  marker_factor_text.header.frame_id = "map";
+  marker_factor_text.header.stamp = ros::Time::now();
+  marker_factor_text.ns = "slow_factor_text";
+  marker_factor_text.id = lane_id;
+  marker_factor_text.lifetime = ros::Duration(0.5);
+  marker_factor_text.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+  marker_factor_text.action = visualization_msgs::Marker::ADD;
+  marker_factor_text.pose = pose;
+  marker_factor_text.pose.position.z += 2.0;
+  marker_factor_text.scale = createMarkerScale(0.0, 0.0, 1.0);
+  marker_factor_text.color = createMarkerColor(1.0, 1.0, 1.0, 0.999);
+  marker_factor_text.text = slow_factor;
   msg.markers.push_back(marker_factor_text);
 
   return msg;
@@ -305,9 +342,15 @@ visualization_msgs::MarkerArray IntersectionModule::createDebugMarkerArray()
         debug_data_.judge_point_pose, "judge_point_pose", lane_id_, 1.0, 1.0, 0.5),
       &debug_marker_array);
 
-    appendMarkerArray(
-      createVirtualWallMarkerArray(debug_data_.virtual_wall_pose, lane_id_, "intersection"),
-      &debug_marker_array);
+    if(debug_data_.stop_required){
+      appendMarkerArray(
+          createVirtualStopWallMarkerArray(debug_data_.stop_wall_pose, lane_id_, "intersection"),
+          &debug_marker_array);
+    } else {
+      appendMarkerArray(
+          createVirtualSlowWallMarkerArray(debug_data_.slow_wall_pose, lane_id_, "intersection"),
+          &debug_marker_array);
+    }
   }
 
   return debug_marker_array;
@@ -326,7 +369,7 @@ visualization_msgs::MarkerArray MergeFromPrivateRoadModule::createDebugMarkerArr
       &debug_marker_array);
 
     appendMarkerArray(
-      createVirtualWallMarkerArray(
+      createVirtualStopWallMarkerArray(
         debug_data_.virtual_wall_pose, lane_id_, "merge from private road"),
       &debug_marker_array);
   }
