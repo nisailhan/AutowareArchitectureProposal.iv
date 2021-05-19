@@ -48,18 +48,19 @@ struct PlannerData
 
   // msgs from callbacks that are used for data-ready
   geometry_msgs::TwistStamped::ConstPtr current_velocity;
+  geometry_msgs::TwistStamped::ConstPtr prev_velocity;
   autoware_perception_msgs::DynamicObjectArray::ConstPtr dynamic_objects;
   pcl::PointCloud<pcl::PointXYZ>::ConstPtr no_ground_pointcloud;
   lanelet::LaneletMapPtr lanelet_map;
 
   // other internal data
-  std::map<int, autoware_perception_msgs::TrafficLightStateStamped> traffic_light_id_map_;
+  std::map<int, autoware_perception_msgs::TrafficLightStateStamped> traffic_light_id_map;
   lanelet::traffic_rules::TrafficRulesPtr traffic_rules;
   lanelet::routing::RoutingGraphPtr routing_graph;
   std::shared_ptr<const lanelet::routing::RoutingGraphContainer> overall_graphs;
 
   // external data
-  std::map<int, autoware_perception_msgs::TrafficLightStateStamped> external_traffic_light_id_map_;
+  std::map<int, autoware_perception_msgs::TrafficLightStateStamped> external_traffic_light_id_map;
   boost::optional<autoware_api_msgs::CrosswalkStatus> external_crosswalk_status_input;
   boost::optional<autoware_api_msgs::IntersectionStatus> external_intersection_status_input;
 
@@ -72,8 +73,31 @@ struct PlannerData
   double vehicle_length;
 
   // additional parameters
-  double max_stop_acceleration_threshold_;
-  double delay_response_time_;
+  double max_stop_acceleration_threshold;
+  double max_stop_jerk_threshold;
+  double delay_response_time;
+  double yellow_lamp_period;
+
+  // calc current acceleration
+  double current_accel;
+  double prev_accel;
+  double accel_lowpass_gain;
+
+  void updateCurrentAcc()
+  {
+    if (prev_velocity) {
+      const double dv = current_velocity->twist.linear.x - prev_velocity->twist.linear.x;
+      const double dt = std::max((current_velocity->header.stamp - prev_velocity->header.stamp).toSec(), 1e-03);
+      const double accel = dv / dt;
+      // apply lowpass filter
+      current_accel = accel_lowpass_gain * accel + (1.0 - accel_lowpass_gain) * prev_accel; 
+    } else {
+      current_accel = 0.0;
+    }
+
+    prev_velocity = current_velocity;
+    prev_accel = current_accel;
+  }
 
   bool isVehicleStopping() const
   {
@@ -84,20 +108,20 @@ struct PlannerData
   std::shared_ptr<autoware_perception_msgs::TrafficLightStateStamped> getTrafficLightState(
     const int id) const
   {
-    if (traffic_light_id_map_.count(id) == 0) {
+    if (traffic_light_id_map.count(id) == 0) {
       return {};
     }
     return std::make_shared<autoware_perception_msgs::TrafficLightStateStamped>(
-      traffic_light_id_map_.at(id));
+      traffic_light_id_map.at(id));
   }
 
   std::shared_ptr<autoware_perception_msgs::TrafficLightStateStamped> getExternalTrafficLightState(
     const int id) const
   {
-    if (external_traffic_light_id_map_.count(id) == 0) {
+    if (external_traffic_light_id_map.count(id) == 0) {
       return {};
     }
     return std::make_shared<autoware_perception_msgs::TrafficLightStateStamped>(
-      external_traffic_light_id_map_.at(id));
+      external_traffic_light_id_map.at(id));
   }
 };

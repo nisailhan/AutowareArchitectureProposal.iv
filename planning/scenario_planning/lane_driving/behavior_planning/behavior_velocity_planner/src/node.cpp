@@ -145,6 +145,7 @@ BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode()
   // Parameters
   pnh_.param("forward_path_length", forward_path_length_, 1000.0);
   pnh_.param("backward_path_length", backward_path_length_, 5.0);
+  pnh_.param("lowpass_gain", planner_data_.accel_lowpass_gain, 0.5);
 
   // Vehicle Parameters
   planner_data_.wheel_base = waitForParam<double>(pnh_, "/vehicle_info/wheel_base");
@@ -153,10 +154,11 @@ BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode()
   planner_data_.vehicle_width = waitForParam<double>(pnh_, "/vehicle_info/vehicle_width");
   planner_data_.vehicle_length = waitForParam<double>(pnh_, "/vehicle_info/vehicle_length");
   // Additional Vehicle Parameters
-  pnh_.param(
-    "max_accel", planner_data_.max_stop_acceleration_threshold_,
-    -5.0);  // TODO read min_acc in velocity_controller_param.yaml?
-  pnh_.param("delay_response_time", planner_data_.delay_response_time_, 1.3);
+  pnh_.param("max_accel", planner_data_.max_stop_acceleration_threshold, -5.0);
+  // TODO read min_acc in velocity_controller_param.yaml?
+  pnh_.param("max_jerk", planner_data_.max_stop_jerk_threshold, -5.0);
+  pnh_.param("delay_response_time", planner_data_.delay_response_time, 0.50);
+  pnh_.param("yellow_lamp_period", planner_data_.yellow_lamp_period, 2.75);
   // TODO(Kenji Miyake): get from additional vehicle_info?
   planner_data_.base_link2front = planner_data_.front_overhang + planner_data_.wheel_base;
 
@@ -227,6 +229,7 @@ void BehaviorVelocityPlannerNode::onVehicleVelocity(
   const geometry_msgs::TwistStamped::ConstPtr & msg)
 {
   planner_data_.current_velocity = msg;
+  planner_data_.updateCurrentAcc();
 }
 
 void BehaviorVelocityPlannerNode::onLaneletMap(const autoware_lanelet2_msgs::MapBin::ConstPtr & msg)
@@ -267,7 +270,7 @@ void BehaviorVelocityPlannerNode::onTrafficLightStates(
     autoware_perception_msgs::TrafficLightStateStamped traffic_light_state;
     traffic_light_state.header = msg->header;
     traffic_light_state.state = state;
-    planner_data_.traffic_light_id_map_[state.id] = traffic_light_state;
+    planner_data_.traffic_light_id_map[state.id] = traffic_light_state;
   }
 }
 
@@ -290,7 +293,7 @@ void BehaviorVelocityPlannerNode::onExternalTrafficLightStates(
     autoware_perception_msgs::TrafficLightStateStamped traffic_light_state;
     traffic_light_state.header = msg->header;
     traffic_light_state.state = state;
-    planner_data_.external_traffic_light_id_map_[state.id] = traffic_light_state;
+    planner_data_.external_traffic_light_id_map[state.id] = traffic_light_state;
   }
 }
 

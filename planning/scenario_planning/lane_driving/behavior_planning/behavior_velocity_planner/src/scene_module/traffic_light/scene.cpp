@@ -138,16 +138,19 @@ bool TrafficLightModule::modifyPathVelocity(
 
   const auto input_path = *path;
 
+  const double max_acc = planner_data_->max_stop_acceleration_threshold;
+  const double max_jerk = planner_data_->max_stop_jerk_threshold;
+  const double delay_response_time = planner_data_->delay_response_time;
+  const double optional_vel = 2.0 * max_acc * (delay_response_time - planner_data_->yellow_lamp_period);
+
   // get lanelet2 traffic light
   lanelet::ConstLineString3d lanelet_stop_line = *(traffic_light_reg_elem_.stopLine());
   lanelet::ConstLineStringsOrPolygons3d traffic_lights = traffic_light_reg_elem_.trafficLights();
 
-  // get vehicle info
-  geometry_msgs::TwistStamped::ConstPtr self_twist_ptr = planner_data_->current_velocity;
-  const double max_acc = planner_data_->max_stop_acceleration_threshold_;
-  const double delay_response_time = planner_data_->delay_response_time_;
-  const double pass_judge_line_distance =
-    planning_utils::calcJudgeLineDist(self_twist_ptr->twist.linear.x, max_acc, delay_response_time);
+  const double pass_judge_line_distance = planning_utils::calcJudgeLineDistWithJerkLimit(
+        planner_data_->current_velocity->twist.linear.x,
+        planner_data_->current_accel,
+        max_acc, max_jerk, delay_response_time);
 
   geometry_msgs::PoseStamped self_pose = planner_data_->current_pose;
 
@@ -198,27 +201,28 @@ bool TrafficLightModule::modifyPathVelocity(
               stop_line_point)) {
           continue;
         }
+
+        const double signed_arc_length 
+          = calcSignedArcLength(input_path, self_pose.pose, stop_line_point);
+        const double reachable_distance 
+          = planner_data_->current_velocity->twist.linear.x * planner_data_->yellow_lamp_period;
+
+        const bool stoppable 
+          = pass_judge_line_distance + planner_data_->base_link2front < signed_arc_length ? true : false; 
+
         // judge pass or stop
-        if (
-          (planner_param_.enable_pass_judge && input_ == Input::PERCEPTION &&
-           calcSignedArcLength(input_path, self_pose.pose, stop_line_point) <
-             pass_judge_line_distance + planner_data_->base_link2front) &&
-          (3.0 /* =10.8km/h */ < self_twist_ptr->twist.linear.x) && !is_prev_state_stop_) {
-          ROS_WARN_THROTTLE(
-            1.0, "[traffic_light] vehicle is over stop border (%f m)",
-            pass_judge_line_distance + planner_data_->base_link2front);
-          return true;
-        } else {
-          // Add Stop WayPoint
-          if (!insertTargetVelocityPoint(
-                input_path, stop_line, planner_param_.stop_margin, 0.0, *path)) {
+        if(finalJudgeStopRequired(stoppable, reachable_distance, signed_arc_length)){
+          // stop
+          if (!insertTargetVelocityPoint(input_path, stop_line, planner_param_.stop_margin, 0.0, *path)) {
             ROS_WARN("[traffic_light] cannot insert stop waypoint");
             continue;
           }
-          is_prev_state_stop_ = true;
+        } else {
+          // pass
+          return true;
         }
 
-        /* get stop point and stop factor */
+        // get stop point and stop factor
         autoware_planning_msgs::StopFactor stop_factor;
         stop_factor.stop_pose = debug_data_.first_stop_pose;
         stop_factor.stop_factor_points = debug_data_.traffic_light_points;
@@ -232,6 +236,30 @@ bool TrafficLightModule::modifyPathVelocity(
   }
 
   return false;
+}
+
+bool TrafficLightModule::finalJudgeStopRequired(const bool & stoppable, const double & reachable_distance, const double & signed_arc_length)
+{
+  if (planner_param_.enable_pass_judge && input_ == Input::PERCEPTION && !stoppable &&
+      2.0 < planner_data_->current_velocity->twist.linear.x && 
+      !is_prev_state_stop_) {
+
+    if(reachable_distance < signed_arc_length){
+      // dilemma zone: emergency stop
+      ROS_WARN_THROTTLE(1.0, "[traffic_light] cannot pass through intersection during yellow lamp!");
+      is_prev_state_stop_ = true;
+      return true;
+
+    } else {
+      // pass through
+      ROS_WARN_THROTTLE(1.0, "[traffic_light] can pass through intersection during yellow lamp");
+      return false;
+    }
+
+  } else {
+    is_prev_state_stop_ = true;
+    return true;
+  }
 }
 
 bool TrafficLightModule::isOverDeadLine(
@@ -322,6 +350,7 @@ bool TrafficLightModule::getHighestConfidenceTrafficLightState(
     }
 
     const int id = static_cast<lanelet::ConstLineString3d>(traffic_light).id();
+    ROS_DEBUG("traffic light id:%d (on route)", id);
     const auto tl_state_stamped = planner_data_->getTrafficLightState(id);
     if (!tl_state_stamped) {
       reason = "TrafficLightStateNotFound";
@@ -345,10 +374,10 @@ bool TrafficLightModule::getHighestConfidenceTrafficLightState(
     if (highest_confidence < tl_state.lamp_states.front().confidence) {
       highest_confidence = tl_state.lamp_states.front().confidence;
       highest_confidence_tl_state = *tl_state_stamped;
-      const std::vector<geometry_msgs::Point> highest_traffic_light{
-        getTrafficLightPosition(traffic_light)};
+      /* const std::vector<geometry_msgs::Point> highest_traffic_light{ */
+      /*   getTrafficLightPosition(traffic_light)}; */
       // store only highest confidence traffic light (not all traffic light)
-      debug_data_.traffic_light_points = highest_traffic_light;
+      /* debug_data_.traffic_light_points = highest_traffic_light; */
     }
     found = true;
   }

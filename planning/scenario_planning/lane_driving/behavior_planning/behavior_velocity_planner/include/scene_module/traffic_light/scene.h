@@ -106,6 +106,8 @@ private:
 
   bool isStopRequired(const autoware_perception_msgs::TrafficLightState & tl_state);
 
+  bool finalJudgeStopRequired(const bool & stoppable, const double & reachable_distance, const double & signed_arc_length);
+
   bool createTargetPoint(
     const autoware_planning_msgs::PathWithLaneId & input,
     const boost::geometry::model::linestring<boost::geometry::model::d2::point_xy<double>> &
