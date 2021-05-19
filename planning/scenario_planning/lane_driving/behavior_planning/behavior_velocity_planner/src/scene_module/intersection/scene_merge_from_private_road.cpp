@@ -56,20 +56,23 @@ bool MergeFromPrivateRoadModule::modifyPathVelocity(
 
   /* get detection area */
   std::vector<lanelet::CompoundPolygon3d> detection_areas;
+  std::vector<lanelet::CompoundPolygon3d> conflicting_areas;
+
   util::getObjectivePolygons(
-    lanelet_map_ptr, routing_graph_ptr, lane_id_, planner_param_, &detection_areas);
+    lanelet_map_ptr, routing_graph_ptr, lane_id_, planner_param_, &conflicting_areas,
+    &detection_areas);
   if (detection_areas.empty()) {
     ROS_DEBUG("[MergeFromPrivateRoad] no detection area. skip computation.");
     return true;
   }
-  debug_data_.detection_area = detection_areas;
+  debug_data_.detection_area = conflicting_areas;
 
   /* set stop-line and stop-judgement-line for base_link */
   int stop_line_idx = -1;
   int judge_line_idx = -1;
   int first_idx_inside_lane = -1;
   if (!util::generateStopLine(
-        lane_id_, detection_areas, planner_data_, planner_param_, path, *path, &stop_line_idx,
+        lane_id_, conflicting_areas, planner_data_, planner_param_, path, *path, &stop_line_idx,
         &judge_line_idx, &first_idx_inside_lane)) {
     ROS_WARN_DELAYED_THROTTLE(1.0, "[MergeFromPrivateRoadModule::run] setStopLineIdx fail");
     return false;

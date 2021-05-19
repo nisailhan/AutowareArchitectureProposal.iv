@@ -40,7 +40,8 @@ bool IntersectionModule::modifyPathVelocity(
   autoware_planning_msgs::PathWithLaneId * path, autoware_planning_msgs::StopReason * stop_reason)
 {
   const bool external_go = isTargetExternalInputStatus(autoware_api_msgs::IntersectionStatus::GO);
-  const bool external_stop = isTargetExternalInputStatus(autoware_api_msgs::IntersectionStatus::STOP);
+  const bool external_stop =
+    isTargetExternalInputStatus(autoware_api_msgs::IntersectionStatus::STOP);
 
   ROS_DEBUG("[intersection] ===== plan start =====");
   debug_data_ = {};
@@ -60,10 +61,13 @@ bool IntersectionModule::modifyPathVelocity(
   const auto lanelet_map_ptr = planner_data_->lanelet_map;
   const auto routing_graph_ptr = planner_data_->routing_graph;
 
-  /* get detection area */
+  /* get detection area and conflicting area */
   std::vector<lanelet::CompoundPolygon3d> detection_areas;
+  std::vector<lanelet::CompoundPolygon3d> conflicting_areas;
+
   util::getObjectivePolygons(
-    lanelet_map_ptr, routing_graph_ptr, lane_id_, planner_param_, &detection_areas);
+    lanelet_map_ptr, routing_graph_ptr, lane_id_, planner_param_, &conflicting_areas,
+    &detection_areas);
   if (detection_areas.empty()) {
     ROS_DEBUG("[Intersection] no detection area. skip computation.");
     return true;
@@ -76,8 +80,8 @@ bool IntersectionModule::modifyPathVelocity(
   int first_idx_inside_lane = -1;
   const auto target_path = trimPathWithLaneId(*path);
   if (!util::generateStopLine(
-        lane_id_, detection_areas, planner_data_, planner_param_, path, target_path, &stop_line_idx,
-        &pass_judge_line_idx, &first_idx_inside_lane)) {
+        lane_id_, conflicting_areas, planner_data_, planner_param_, path, target_path,
+        &stop_line_idx, &pass_judge_line_idx, &first_idx_inside_lane)) {
     ROS_WARN_DELAYED_THROTTLE(1.0, "[IntersectionModule::run] setStopLineIdx fail");
     ROS_DEBUG("[intersection] ===== plan end =====");
     return false;
