@@ -38,12 +38,6 @@ void onData(const T & data, T * buffer)
   *buffer = data;
 }
 
-template <class T>
-boost::function<void(const T &)> createCallback(T * buffer)
-{
-  return static_cast<boost::function<void(const T &)>>(boost::bind(onData<T>, _1, buffer));
-}
-
 std::shared_ptr<lanelet::ConstPolygon3d> findNearestParkinglot(
   const std::shared_ptr<lanelet::LaneletMap> & lanelet_map_ptr,
   const lanelet::BasicPoint2d & search_point)
@@ -157,12 +151,12 @@ bool isStopped(
 
 }  // namespace
 
-Input ScenarioSelectorNode::getScenarioInput(const std::string & scenario)
+autoware_planning_msgs::Trajectory::ConstPtr ScenarioSelectorNode::getScenarioTrajectory(const std::string & scenario)
 {
-  if (scenario == autoware_planning_msgs::Scenario::LaneDriving) return input_lane_driving_;
-  if (scenario == autoware_planning_msgs::Scenario::Parking) return input_parking_;
+  if (scenario == autoware_planning_msgs::Scenario::LaneDriving) return lane_driving_trajectory_;
+  if (scenario == autoware_planning_msgs::Scenario::Parking) return parking_trajectory_;
   ROS_ERROR_STREAM("invalid scenario argument: " << scenario);
-  return input_lane_driving_;
+  return lane_driving_trajectory_;
 }
 
 std::string ScenarioSelectorNode::selectScenarioByPosition()
@@ -196,11 +190,11 @@ std::string ScenarioSelectorNode::selectScenarioByPosition()
   return current_scenario_;
 }
 
-autoware_planning_msgs::Scenario ScenarioSelectorNode::selectScenario()
+void ScenarioSelectorNode::updateCurrentScenario()
 {
   const auto prev_scenario = current_scenario_;
 
-  const auto scenario_trajectory = getScenarioInput(current_scenario_).buf_trajectory;
+  const auto scenario_trajectory = getScenarioTrajectory(current_scenario_);
 
   const auto is_near_trajectory_end =
     isNearTrajectoryEnd(scenario_trajectory, current_pose_->pose, th_arrived_distance_m_);
@@ -211,18 +205,9 @@ autoware_planning_msgs::Scenario ScenarioSelectorNode::selectScenario()
     current_scenario_ = selectScenarioByPosition();
   }
 
-  autoware_planning_msgs::Scenario scenario;
-  scenario.current_scenario = current_scenario_;
-
-  if (current_scenario_ == autoware_planning_msgs::Scenario::Parking) {
-    scenario.activating_scenarios.push_back(current_scenario_);
-  }
-
   if (current_scenario_ != prev_scenario) {
     ROS_INFO_STREAM("scenario changed: " << prev_scenario << " -> " << current_scenario_);
   }
-
-  return scenario;
 }
 
 void ScenarioSelectorNode::onMap(const autoware_lanelet2_msgs::MapBin & msg)
@@ -270,21 +255,46 @@ void ScenarioSelectorNode::onTimer(const ros::TimerEvent & event)
     current_scenario_ = selectScenarioByPosition();
   }
 
-  // Select scenario
-  const auto scenario = selectScenario();
-  output_.pub_scenario.publish(scenario);
+  updateCurrentScenario();
+  autoware_planning_msgs::Scenario scenario;
+  scenario.current_scenario = current_scenario_;
 
-  const auto & input = getScenarioInput(scenario.current_scenario);
+  if (current_scenario_ == autoware_planning_msgs::Scenario::Parking) {
+    scenario.activating_scenarios.push_back(current_scenario_);
+  }
 
-  if (!input.buf_trajectory) {
+  pub_scenario_.publish(scenario);
+}
+
+
+void ScenarioSelectorNode::onLaneDrivingTrajectory(const autoware_planning_msgs::Trajectory::ConstPtr & msg)
+{
+  lane_driving_trajectory_ = msg;
+
+  if(current_scenario_ != autoware_planning_msgs::Scenario::LaneDriving){
     return;
   }
 
-  // Output
+  publishTrajectory(msg);
+}
+
+void ScenarioSelectorNode::onParkingTrajectory(const autoware_planning_msgs::Trajectory::ConstPtr & msg)
+{
+  parking_trajectory_ = msg;
+
+  if(current_scenario_ != autoware_planning_msgs::Scenario::Parking){
+    return;
+  }
+
+  publishTrajectory(msg);
+}
+
+void ScenarioSelectorNode::publishTrajectory(const autoware_planning_msgs::Trajectory::ConstPtr & msg)
+{
   const auto now = ros::Time::now();
-  const auto delay_sec = (now - input.buf_trajectory->header.stamp).toSec();
+  const auto delay_sec = (now - msg->header.stamp).toSec();
   if (delay_sec <= th_max_message_delay_sec_) {
-    output_.pub_trajectory.publish(input.buf_trajectory);
+    pub_trajectory_.publish(msg);
   } else {
     ROS_WARN_THROTTLE(
       1.0, "trajectory is delayed: scenario = %s, delay = %f, th_max_message_delay = %f",
@@ -306,11 +316,10 @@ ScenarioSelectorNode::ScenarioSelectorNode()
   private_nh_.param<double>("th_stopped_velocity_mps", th_stopped_velocity_mps_, 0.01);
 
   // Input
-  input_lane_driving_.sub_trajectory = private_nh_.subscribe(
-    "input/lane_driving/trajectory", 1, createCallback(&input_lane_driving_.buf_trajectory));
-
-  input_parking_.sub_trajectory = private_nh_.subscribe(
-    "input/parking/trajectory", 1, createCallback(&input_parking_.buf_trajectory));
+  sub_lane_driving_trajectory_ = 
+    private_nh_.subscribe("input/lane_driving/trajectory", 1, &ScenarioSelectorNode::onLaneDrivingTrajectory, this);
+  sub_parking_trajectory_ = 
+    private_nh_.subscribe("input/parking/trajectory", 1, &ScenarioSelectorNode::onParkingTrajectory, this);
 
   sub_lanelet_map_ =
     private_nh_.subscribe("input/lanelet_map", 1, &ScenarioSelectorNode::onMap, this);
@@ -318,10 +327,8 @@ ScenarioSelectorNode::ScenarioSelectorNode()
   sub_twist_ = private_nh_.subscribe("input/twist", 100, &ScenarioSelectorNode::onTwist, this);
 
   // Output
-  output_.pub_scenario =
-    private_nh_.advertise<autoware_planning_msgs::Scenario>("output/scenario", 1);
-  output_.pub_trajectory =
-    private_nh_.advertise<autoware_planning_msgs::Trajectory>("output/trajectory", 1);
+  pub_scenario_ = private_nh_.advertise<autoware_planning_msgs::Scenario>("output/scenario", 1);
+  pub_trajectory_ = private_nh_.advertise<autoware_planning_msgs::Trajectory>("output/trajectory", 1);
 
   // Timer Callback
   timer_ = private_nh_.createTimer(ros::Rate(update_rate_), &ScenarioSelectorNode::onTimer, this);

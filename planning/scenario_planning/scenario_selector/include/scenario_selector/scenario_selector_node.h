@@ -34,18 +34,6 @@
 #include <autoware_planning_msgs/Trajectory.h>
 #include <geometry_msgs/TwistStamped.h>
 
-struct Input
-{
-  ros::Subscriber sub_trajectory;
-  autoware_planning_msgs::Trajectory::ConstPtr buf_trajectory;
-};
-
-struct Output
-{
-  ros::Publisher pub_scenario;
-  ros::Publisher pub_trajectory;
-};
-
 class ScenarioSelectorNode
 {
 public:
@@ -56,10 +44,13 @@ public:
   void onTwist(const geometry_msgs::TwistStamped::ConstPtr & msg);
 
   void onTimer(const ros::TimerEvent & event);
+  void onLaneDrivingTrajectory(const autoware_planning_msgs::Trajectory::ConstPtr & msg);
+  void onParkingTrajectory(const autoware_planning_msgs::Trajectory::ConstPtr & msg);
+  void publishTrajectory(const autoware_planning_msgs::Trajectory::ConstPtr & msg);
 
-  autoware_planning_msgs::Scenario selectScenario();
+  void updateCurrentScenario();
   std::string selectScenarioByPosition();
-  Input getScenarioInput(const std::string & scenario);
+  autoware_planning_msgs::Trajectory::ConstPtr getScenarioTrajectory(const std::string & scenario);
 
 private:
   ros::NodeHandle nh_;
@@ -73,12 +64,13 @@ private:
   ros::Subscriber sub_lanelet_map_;
   ros::Subscriber sub_route_;
   ros::Subscriber sub_twist_;
+  ros::Subscriber sub_lane_driving_trajectory_;
+  ros::Subscriber sub_parking_trajectory_;
+  ros::Publisher pub_trajectory_;
+  ros::Publisher pub_scenario_;
 
-  Input input_lane_driving_;
-  Input input_parking_;
-
-  Output output_;
-
+  autoware_planning_msgs::Trajectory::ConstPtr lane_driving_trajectory_;
+  autoware_planning_msgs::Trajectory::ConstPtr parking_trajectory_;
   autoware_planning_msgs::Route::ConstPtr route_;
   geometry_msgs::PoseStamped::ConstPtr current_pose_;
   geometry_msgs::TwistStamped::ConstPtr twist_;
