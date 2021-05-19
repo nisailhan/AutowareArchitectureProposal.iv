@@ -50,6 +50,9 @@
 #include <lanelet2_extension/utility/query.h>
 #include <lanelet2_extension/utility/utilities.h>
 #include <lanelet2_extension/visualization/visualization.h>
+#include <pcl_ros/transforms.h>
+#include <tf2/utils.h>
+#include <tf2_eigen/tf2_eigen.h>
 
 #include <costmap_generator/object_map_utils.hpp>
 
@@ -83,6 +86,20 @@ std::vector<geometry_msgs::Point> poly2vector(const geometry_msgs::Polygon & pol
     ps.push_back(p);
   }
   return ps;
+}
+
+pcl::PointCloud<pcl::PointXYZ> getTransformedPointCloud(
+  const sensor_msgs::PointCloud2 & pointcloud_msg, const geometry_msgs::Transform & transform)
+{
+  const Eigen::Matrix4f transform_matrix = tf2::transformToEigen(transform).matrix().cast<float>();
+
+  sensor_msgs::PointCloud2 transformed_msg;
+  pcl_ros::transformPointCloud(transform_matrix, pointcloud_msg, transformed_msg);
+
+  pcl::PointCloud<pcl::PointXYZ> transformed_pointcloud;
+  pcl::fromROSMsg(transformed_msg, transformed_pointcloud);
+
+  return transformed_pointcloud;
 }
 
 }  // namespace
@@ -233,9 +250,7 @@ void CostmapGenerator::onTimer(const ros::TimerEvent & event)
   }
 
   if (use_points_ && points_) {
-    pcl::PointCloud<pcl::PointXYZ>::Ptr points(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::fromROSMsg(*points_, *points);
-    costmap_[LayerName::points] = generatePointsCostmap(points);
+    costmap_[LayerName::points] = generatePointsCostmap(points_);
   }
 
   costmap_[LayerName::combined] = generateCombinedCostmap();
@@ -257,11 +272,22 @@ void CostmapGenerator::initGridmap()
 }
 
 grid_map::Matrix CostmapGenerator::generatePointsCostmap(
-  const pcl::PointCloud<pcl::PointXYZ>::Ptr & in_points)
+  const sensor_msgs::PointCloud2::ConstPtr & in_points)
 {
+  geometry_msgs::TransformStamped points2costmap;
+  try {
+    points2costmap = tf_buffer_.lookupTransform(
+      costmap_frame_, in_points->header.frame_id, ros::Time(0), ros::Duration(1.0));
+  } catch (tf2::TransformException ex) {
+    ROS_ERROR("%s", ex.what());
+  }
+
+  const auto transformed_points = getTransformedPointCloud(*in_points, points2costmap.transform);
+
   grid_map::Matrix points_costmap = points2costmap_.makeCostmapFromPoints(
     maximum_lidar_height_thres_, minimum_lidar_height_thres_, grid_min_value_, grid_max_value_,
-    costmap_, LayerName::points, in_points);
+    costmap_, LayerName::points, transformed_points);
+
   return points_costmap;
 }
 

@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_ros
   roscpp
   tf2
+  tf2_eigen
   tf2_ros
   lanelet2_extension
 )

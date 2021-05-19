@@ -47,16 +47,13 @@
 #ifndef POINTS_TO_COSTMAP_H
 #define POINTS_TO_COSTMAP_H
 
+#include <pcl_ros/point_cloud.h>
 #include <ros/ros.h>
 #include <grid_map_ros/grid_map_ros.hpp>
-#include <pcl_ros/point_cloud.h>
 
 class PointsToCostmap
 {
 public:
-  PointsToCostmap();
-  ~PointsToCostmap();
-
   /// \brief calculate cost from sensor points
   /// \param[in] maximum_height_thres: Maximum height threshold for pointcloud data
   /// \param[in] minimum_height_thres: Minimum height threshold for pointcloud data
@@ -70,7 +67,7 @@ public:
     const double maximum_height_thres, const double minimum_height_thres,
     const double grid_min_value, const double grid_max_value, const grid_map::GridMap & gridmap,
     const std::string & gridmap_layer_name,
-    const pcl::PointCloud<pcl::PointXYZ>::Ptr & in_sensor_points);
+    const pcl::PointCloud<pcl::PointXYZ> & in_sensor_points);
 
 private:
   double grid_length_x_;
@@ -101,8 +98,7 @@ private:
   /// \param[out] grid-x-length x grid-y-length size grid stuffed with point's height in
   /// corresponding grid cell
   std::vector<std::vector<std::vector<double>>> assignPoints2GridCell(
-    const grid_map::GridMap & gridmap,
-    const pcl::PointCloud<pcl::PointXYZ>::Ptr & in_sensor_points);
+    const grid_map::GridMap & gridmap, const pcl::PointCloud<pcl::PointXYZ> & in_sensor_points);
 
   /// \brief calculate costmap from subscribed pointcloud
   /// \param[in] maximum_height_thres: Maximum height threshold for pointcloud data

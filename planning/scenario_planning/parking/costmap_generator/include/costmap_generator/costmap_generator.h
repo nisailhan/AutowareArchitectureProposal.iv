@@ -178,7 +178,7 @@ private:
 
   /// \brief calculate cost from pointcloud data
   /// \param[in] in_points: subscribed pointcloud data
-  grid_map::Matrix generatePointsCostmap(const pcl::PointCloud<pcl::PointXYZ>::Ptr & in_points);
+  grid_map::Matrix generatePointsCostmap(const sensor_msgs::PointCloud2::ConstPtr & in_points);
 
   /// \brief calculate cost from DynamicObjectArray
   /// \param[in] in_objects: subscribed DynamicObjectArray
