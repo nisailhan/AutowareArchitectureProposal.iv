@@ -68,6 +68,7 @@ public:
   {
     double stop_margin;
     double stop_check_dist;
+    double stop_duration_sec;
   };
 
 public:

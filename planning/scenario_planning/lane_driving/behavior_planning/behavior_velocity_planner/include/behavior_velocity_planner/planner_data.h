@@ -16,8 +16,11 @@
 
 #pragma once
 
+#include <algorithm>
+#include <deque>
 #include <map>
 #include <memory>
+#include <vector>
 
 #include <boost/optional.hpp>
 
@@ -50,6 +53,8 @@ struct PlannerData
   // msgs from callbacks that are used for data-ready
   geometry_msgs::TwistStamped::ConstPtr current_velocity;
   geometry_msgs::TwistStamped::ConstPtr prev_velocity;
+  static constexpr double velocity_buffer_time_sec = 10.0;
+  std::deque<geometry_msgs::TwistStamped> velocity_buffer;
   autoware_perception_msgs::DynamicObjectArray::ConstPtr dynamic_objects;
   pcl::PointCloud<pcl::PointXYZ>::ConstPtr no_ground_pointcloud;
   lanelet::LaneletMapPtr lanelet_map;
@@ -101,10 +106,31 @@ struct PlannerData
     prev_accel = current_accel;
   }
 
-  bool isVehicleStopping() const
+  bool isVehicleStopped(const double stop_duration = 0.0) const
   {
-    if (!current_velocity) return false;
-    return current_velocity->twist.linear.x < 0.1;
+    if (velocity_buffer.empty()) return false;
+
+    // Get velocities within stop_duration
+    const auto now = ros::Time::now();
+    std::vector<double> vs;
+    for (const auto & velocity : velocity_buffer) {
+      vs.push_back(velocity.twist.linear.x);
+
+      const auto time_diff = now - velocity.header.stamp;
+      if (time_diff.toSec() >= stop_duration) {
+        break;
+      }
+    }
+
+    // Check all velocities
+    constexpr double stop_velocity = 0.1;
+    for (const auto & v : vs) {
+      if (v >= stop_velocity) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   std::shared_ptr<autoware_perception_msgs::TrafficLightStateStamped> getTrafficLightState(
