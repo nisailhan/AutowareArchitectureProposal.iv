@@ -63,7 +63,8 @@ private:
   void onTrafficLightStates(const autoware_perception_msgs::TrafficLightStateArray::ConstPtr & msg);
   void onExternalCrosswalkStates(const autoware_api_msgs::CrosswalkStatus::ConstPtr & msg);
   void onExternalIntersectionStates(const autoware_api_msgs::IntersectionStatus::ConstPtr & msg);
-  void onExternalTrafficLightStates(const autoware_perception_msgs::TrafficLightStateArray::ConstPtr & msg);
+  void onExternalTrafficLightStates(
+    const autoware_perception_msgs::TrafficLightStateArray::ConstPtr & msg);
 
   // publisher
   ros::Publisher path_pub_;

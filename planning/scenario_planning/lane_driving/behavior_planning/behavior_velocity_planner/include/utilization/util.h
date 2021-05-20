@@ -104,9 +104,8 @@ double calcJudgeLineDist(
   const double velocity, const double max_stop_acceleration, const double delay_response_time);
 
 double calcJudgeLineDistWithJerkLimit(
-  const double velocity, const double accelerartion,
-  const double max_stop_acceleration, const double max_stop_jerk,
-  const double delay_response_time);
+  const double velocity, const double accelerartion, const double max_stop_acceleration,
+  const double max_stop_jerk, const double delay_response_time);
 
 autoware_planning_msgs::StopReason initializeStopReason(const std::string & stop_reason);
 void appendStopReason(

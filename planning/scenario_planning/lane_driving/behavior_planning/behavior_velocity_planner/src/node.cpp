@@ -26,10 +26,10 @@
 // Scene modules
 #include <scene_module/blind_spot/manager.h>
 #include <scene_module/crosswalk/manager.h>
+#include <scene_module/detection_area/manager.h>
 #include <scene_module/intersection/manager.h>
 #include <scene_module/stop_line/manager.h>
 #include <scene_module/traffic_light/manager.h>
-#include <scene_module/detection_area/manager.h>
 
 namespace
 {
@@ -130,11 +130,14 @@ BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode()
   sub_traffic_light_states_ = pnh_.subscribe(
     "input/traffic_light_states", 10, &BehaviorVelocityPlannerNode::onTrafficLightStates, this);
   sub_external_crosswalk_states_ = pnh_.subscribe(
-    "input/external_crosswalk_states", 10, &BehaviorVelocityPlannerNode::onExternalCrosswalkStates, this);
+    "input/external_crosswalk_states", 10, &BehaviorVelocityPlannerNode::onExternalCrosswalkStates,
+    this);
   sub_external_intersection_states_ = pnh_.subscribe(
-    "input/external_intersection_states", 10, &BehaviorVelocityPlannerNode::onExternalIntersectionStates, this);
+    "input/external_intersection_states", 10,
+    &BehaviorVelocityPlannerNode::onExternalIntersectionStates, this);
   sub_external_traffic_light_states_ = pnh_.subscribe(
-    "input/external_traffic_light_states", 10, &BehaviorVelocityPlannerNode::onExternalTrafficLightStates, this);
+    "input/external_traffic_light_states", 10,
+    &BehaviorVelocityPlannerNode::onExternalTrafficLightStates, this);
 
   // Publishers
   path_pub_ = pnh_.advertise<autoware_planning_msgs::Path>("output/path", 1);

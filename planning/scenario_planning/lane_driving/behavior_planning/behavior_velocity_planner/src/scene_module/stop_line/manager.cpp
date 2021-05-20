@@ -68,7 +68,8 @@ std::set<int64_t> getStopLineIdSetOnPath(
 
 }  // namespace
 
-StopLineModuleManager::StopLineModuleManager() : SceneModuleManagerInterface(getModuleName()) {
+StopLineModuleManager::StopLineModuleManager() : SceneModuleManagerInterface(getModuleName())
+{
   ros::NodeHandle pnh("~");
   const std::string ns(getModuleName());
   auto & p = planner_param_;

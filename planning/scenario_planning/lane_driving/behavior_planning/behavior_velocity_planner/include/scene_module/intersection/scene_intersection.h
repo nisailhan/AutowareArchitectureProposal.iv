@@ -93,17 +93,17 @@ public:
   struct PlannerParam
   {
     double state_transit_margin_time;
-    double decel_velocity;    //! used when in straight and traffic_light lane
+    double decel_velocity;     //! used when in straight and traffic_light lane
     double path_expand_width;  //! path width to calculate the edge line for both side
     double stop_line_margin;   //! distance from auto-generated stopline to detection_area boundary
     double
       stuck_vehicle_detect_dist;  //! distance from intersection end point to finish stuck vehicle check
     double
       stuck_vehicle_ignore_dist;  //! distance from intersection start point to start stuck vehicle check
-    double stuck_vehicle_vel_thr;  //! Threshold of the speed to be recognized as stopped
-    double intersection_velocity;  //! used for intersection passing time
-    double intersection_max_acc;   //! used for calculating intersection velocity
-    double detection_area_length;  //! used to create detection area polygon
+    double stuck_vehicle_vel_thr;   //! Threshold of the speed to be recognized as stopped
+    double intersection_velocity;   //! used for intersection passing time
+    double intersection_max_acc;    //! used for calculating intersection velocity
+    double detection_area_length;   //! used to create detection area polygon
     double external_input_timeout;  //! used to disenable external input
   };
 

@@ -342,14 +342,14 @@ visualization_msgs::MarkerArray IntersectionModule::createDebugMarkerArray()
         debug_data_.judge_point_pose, "judge_point_pose", lane_id_, 1.0, 1.0, 0.5),
       &debug_marker_array);
 
-    if(debug_data_.stop_required){
+    if (debug_data_.stop_required) {
       appendMarkerArray(
-          createVirtualStopWallMarkerArray(debug_data_.stop_wall_pose, lane_id_, "intersection"),
-          &debug_marker_array);
+        createVirtualStopWallMarkerArray(debug_data_.stop_wall_pose, lane_id_, "intersection"),
+        &debug_marker_array);
     } else {
       appendMarkerArray(
-          createVirtualSlowWallMarkerArray(debug_data_.slow_wall_pose, lane_id_, "intersection"),
-          &debug_marker_array);
+        createVirtualSlowWallMarkerArray(debug_data_.slow_wall_pose, lane_id_, "intersection"),
+        &debug_marker_array);
     }
   }
 

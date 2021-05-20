@@ -18,6 +18,7 @@
 
 #include <map>
 #include <memory>
+
 #include <boost/optional.hpp>
 
 #include <tf2_ros/transform_listener.h>
@@ -87,10 +88,11 @@ struct PlannerData
   {
     if (prev_velocity) {
       const double dv = current_velocity->twist.linear.x - prev_velocity->twist.linear.x;
-      const double dt = std::max((current_velocity->header.stamp - prev_velocity->header.stamp).toSec(), 1e-03);
+      const double dt =
+        std::max((current_velocity->header.stamp - prev_velocity->header.stamp).toSec(), 1e-03);
       const double accel = dv / dt;
       // apply lowpass filter
-      current_accel = accel_lowpass_gain * accel + (1.0 - accel_lowpass_gain) * prev_accel; 
+      current_accel = accel_lowpass_gain * accel + (1.0 - accel_lowpass_gain) * prev_accel;
     } else {
       current_accel = 0.0;
     }

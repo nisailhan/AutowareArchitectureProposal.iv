@@ -134,17 +134,18 @@ bool IntersectionModule::modifyPathVelocity(
     const double v = is_stop_required ? stop_vel : decel_vel;
     util::setVelocityFrom(stop_line_idx, v, path);
 
-    if(is_stop_required){
-
+    if (is_stop_required) {
       debug_data_.stop_required = true;
-      debug_data_.stop_wall_pose = util::getAheadPose(stop_line_idx, planner_data_->base_link2front, *path);
+      debug_data_.stop_wall_pose =
+        util::getAheadPose(stop_line_idx, planner_data_->base_link2front, *path);
       debug_data_.stop_point_pose = path->points.at(stop_line_idx).point.pose;
       debug_data_.judge_point_pose = path->points.at(pass_judge_line_idx).point.pose;
 
       /* get stop point and stop factor */
       autoware_planning_msgs::StopFactor stop_factor;
       stop_factor.stop_pose = debug_data_.stop_point_pose;
-      const auto stop_factor_conflict = planning_utils::toRosPoints(debug_data_.conflicting_targets);
+      const auto stop_factor_conflict =
+        planning_utils::toRosPoints(debug_data_.conflicting_targets);
       const auto stop_factor_stuck = planning_utils::toRosPoints(debug_data_.stuck_targets);
       stop_factor.stop_factor_points =
         planning_utils::concatVector(stop_factor_conflict, stop_factor_stuck);
@@ -152,7 +153,8 @@ bool IntersectionModule::modifyPathVelocity(
 
     } else {
       debug_data_.stop_required = false;
-      debug_data_.slow_wall_pose = util::getAheadPose(stop_line_idx, planner_data_->base_link2front, *path);
+      debug_data_.slow_wall_pose =
+        util::getAheadPose(stop_line_idx, planner_data_->base_link2front, *path);
     }
   }
 
