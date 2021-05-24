@@ -130,10 +130,21 @@ TrafficLightModule::TrafficLightModule(
 bool TrafficLightModule::modifyPathVelocity(
   autoware_planning_msgs::PathWithLaneId * path, autoware_planning_msgs::StopReason * stop_reason)
 {
+  // initialize tl_state
   looking_tl_state_.header.stamp = path->header.stamp;
   looking_tl_state_.module = true;
   looking_tl_state_.perception.clear();
   looking_tl_state_.external.clear();
+  looking_tl_state_.final.clear();
+
+  autoware_perception_msgs::TrafficLightJudgeStamped judge;
+  judge.header.stamp = path->header.stamp;
+  judge.judge = autoware_perception_msgs::TrafficLightJudgeStamped::NONE;
+  judge.signal_source = autoware_perception_msgs::TrafficLightJudgeStamped::NO_SIGNAL;
+
+  looking_tl_state_.perception_judge = judge;
+  looking_tl_state_.external_judge = judge;
+  looking_tl_state_.final_judge = judge;
 
   debug_data_ = {};
   debug_data_.base_link2front = planner_data_->base_link2front;
@@ -163,32 +174,14 @@ bool TrafficLightModule::modifyPathVelocity(
   if (state_ == State::GO_OUT) {
     return true;
   } else if (state_ == State::APPROACH) {
-    autoware_perception_msgs::TrafficLightStateStamped tl_state;
-    autoware_perception_msgs::TrafficLightStateStamped tl_state_perception;
-    autoware_perception_msgs::TrafficLightStateStamped tl_state_external;
-    bool found_perception = getHighestConfidenceTrafficLightState(traffic_lights, tl_state_perception);
-    bool found_external = getExternalTrafficLightState(traffic_lights, tl_state_external);
-
-    if(!found_perception && !found_external){
-      // Don't stop when UNKNOWN or TIMEOUT as discussed at #508
-      input_ = Input::NONE;
+    if (!updateTrafficLightState(traffic_lights)) {
       return true;
     }
 
-    if(found_perception){
-      looking_tl_state_.perception.push_back(tl_state_perception);
-      input_ = Input::PERCEPTION;
-      tl_state = tl_state_perception;
-    }
-
-    if(found_external){
-      looking_tl_state_.external.push_back(tl_state_external);
-      input_ = Input::EXTERNAL;
-      tl_state = tl_state_external;
-    }
-
     // Check Traffic Light
-    if (isStopRequired(tl_state.state)) {
+    if (
+      looking_tl_state_.final_judge.judge ==
+      autoware_perception_msgs::TrafficLightJudgeStamped::STOP) {
       for (size_t i = 0; i < lanelet_stop_line.size() - 1; i++) {
         const Line stop_line = {
           {lanelet_stop_line[i].x(), lanelet_stop_line[i].y()},
@@ -257,6 +250,50 @@ bool TrafficLightModule::modifyPathVelocity(
   }
 
   return false;
+}
+
+bool TrafficLightModule::updateTrafficLightState(
+  const lanelet::ConstLineStringsOrPolygons3d traffic_lights)
+{
+  autoware_perception_msgs::TrafficLightStateStamped tl_state_perception;
+  autoware_perception_msgs::TrafficLightStateStamped tl_state_external;
+  bool found_perception =
+    getHighestConfidenceTrafficLightState(traffic_lights, tl_state_perception);
+  bool found_external = getExternalTrafficLightState(traffic_lights, tl_state_external);
+
+  if (!found_perception && !found_external) {
+    // Don't stop when UNKNOWN or TIMEOUT as discussed at #508
+    input_ = Input::NONE;
+    return false;
+  }
+
+  if (found_perception) {
+    looking_tl_state_.perception.push_back(tl_state_perception);
+    looking_tl_state_.perception_judge.judge =
+      isStopRequired(tl_state_perception.state)
+        ? autoware_perception_msgs::TrafficLightJudgeStamped::STOP
+        : autoware_perception_msgs::TrafficLightJudgeStamped::GO;
+    looking_tl_state_.perception_judge.signal_source =
+      autoware_perception_msgs::TrafficLightJudgeStamped::PERCEPTION;
+    looking_tl_state_.final = looking_tl_state_.perception;
+    looking_tl_state_.final_judge = looking_tl_state_.perception_judge;
+    input_ = Input::PERCEPTION;
+  }
+
+  if (found_external) {
+    looking_tl_state_.external.push_back(tl_state_external);
+    looking_tl_state_.external_judge.judge =
+      isStopRequired(tl_state_external.state)
+        ? autoware_perception_msgs::TrafficLightJudgeStamped::STOP
+        : autoware_perception_msgs::TrafficLightJudgeStamped::GO;
+    looking_tl_state_.external_judge.signal_source =
+      autoware_perception_msgs::TrafficLightJudgeStamped::EXTERNAL;
+    looking_tl_state_.final = looking_tl_state_.external;
+    looking_tl_state_.final_judge = looking_tl_state_.external_judge;
+    input_ = Input::EXTERNAL;
+  }
+
+  return true;
 }
 
 bool TrafficLightModule::finalJudgeStopRequired(

@@ -60,7 +60,8 @@ TrafficLightModuleManager::TrafficLightModuleManager()
   pnh.param(ns + "/tl_state_timeout", p.tl_state_timeout, 1.0);
   pnh.param(ns + "/external_tl_state_timeout", p.external_tl_state_timeout, 1.0);
   pnh.param(ns + "/enable_pass_judge", p.enable_pass_judge, true);
-  pub_tl_state_ = pnh.advertise<autoware_perception_msgs::LookingTrafficLightState>("output/traffic_light_state", 1);
+  pub_tl_state_ = pnh.advertise<autoware_perception_msgs::LookingTrafficLightState>(
+    "output/traffic_light_state", 1);
 }
 
 void TrafficLightModuleManager::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId * path)
@@ -68,8 +69,18 @@ void TrafficLightModuleManager::modifyPathVelocity(autoware_planning_msgs::PathW
   visualization_msgs::MarkerArray debug_marker_array;
   autoware_planning_msgs::StopReasonArray stop_reason_array;
   autoware_perception_msgs::LookingTrafficLightState tl_state;
+
+  autoware_perception_msgs::TrafficLightJudgeStamped judge;
+  judge.header.stamp = path->header.stamp;
+  judge.judge = autoware_perception_msgs::TrafficLightJudgeStamped::NONE;
+  judge.signal_source = autoware_perception_msgs::TrafficLightJudgeStamped::NO_SIGNAL;
+
   tl_state.header.stamp = path->header.stamp;
   tl_state.module = false;
+  tl_state.perception_judge = judge;
+  tl_state.external_judge = judge;
+  tl_state.final_judge = judge;
+
   stop_reason_array.header.frame_id = "map";
   stop_reason_array.header.stamp = ros::Time::now();
   first_stop_path_point_index_ = static_cast<int>(path->points.size());

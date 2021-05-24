@@ -29,6 +29,7 @@ add_message_files(
   FILES
     LampState.msg
     LookingTrafficLightState.msg
+    TrafficLightJudgeStamped.msg
     TrafficLightRoi.msg
     TrafficLightRoiArray.msg
     TrafficLightState.msg
