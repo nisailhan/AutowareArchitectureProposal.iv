@@ -73,9 +73,9 @@ public:
 
   visualization_msgs::MarkerArray createDebugMarkerArray() override;
 
-  inline autoware_perception_msgs::TrafficLightStateStamped getTrafficLightState() const
+  inline autoware_perception_msgs::LookingTrafficLightState getTrafficLightState() const
   {
-    return tl_state_;
+    return looking_tl_state_;
   };
   inline State getTrafficLightModuleState() const { return state_; };
   inline Input getTrafficLightModuleInput() const { return input_; };
@@ -145,5 +145,5 @@ private:
   bool is_prev_state_stop_;
 
   // Traffic Light State
-  autoware_perception_msgs::TrafficLightStateStamped tl_state_;
+  autoware_perception_msgs::LookingTrafficLightState looking_tl_state_;
 };

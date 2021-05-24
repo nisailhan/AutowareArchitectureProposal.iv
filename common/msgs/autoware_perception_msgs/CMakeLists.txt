@@ -28,6 +28,7 @@ add_message_files(
   DIRECTORY msg/traffic_light_recognition
   FILES
     LampState.msg
+    LookingTrafficLightState.msg
     TrafficLightRoi.msg
     TrafficLightRoiArray.msg
     TrafficLightState.msg

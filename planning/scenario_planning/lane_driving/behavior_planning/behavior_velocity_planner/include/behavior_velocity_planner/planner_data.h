@@ -35,6 +35,7 @@
 #include <autoware_perception_msgs/DynamicObjectArray.h>
 #include <autoware_perception_msgs/TrafficLightStateArray.h>
 #include <autoware_perception_msgs/TrafficLightStateStamped.h>
+#include <autoware_perception_msgs/LookingTrafficLightState.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <sensor_msgs/PointCloud2.h>

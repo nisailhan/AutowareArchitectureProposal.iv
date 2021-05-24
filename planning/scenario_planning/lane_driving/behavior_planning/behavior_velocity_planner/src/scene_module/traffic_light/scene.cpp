@@ -130,6 +130,11 @@ TrafficLightModule::TrafficLightModule(
 bool TrafficLightModule::modifyPathVelocity(
   autoware_planning_msgs::PathWithLaneId * path, autoware_planning_msgs::StopReason * stop_reason)
 {
+  looking_tl_state_.header.stamp = path->header.stamp;
+  looking_tl_state_.module = true;
+  looking_tl_state_.perception.clear();
+  looking_tl_state_.external.clear();
+
   debug_data_ = {};
   debug_data_.base_link2front = planner_data_->base_link2front;
   first_stop_path_point_index_ = static_cast<int>(path->points.size()) - 1;
@@ -158,18 +163,32 @@ bool TrafficLightModule::modifyPathVelocity(
   if (state_ == State::GO_OUT) {
     return true;
   } else if (state_ == State::APPROACH) {
-    if (getExternalTrafficLightState(traffic_lights, tl_state_)) {
-      input_ = Input::EXTERNAL;
-    } else if (getHighestConfidenceTrafficLightState(traffic_lights, tl_state_)) {
-      input_ = Input::PERCEPTION;
-    } else {
+    autoware_perception_msgs::TrafficLightStateStamped tl_state;
+    autoware_perception_msgs::TrafficLightStateStamped tl_state_perception;
+    autoware_perception_msgs::TrafficLightStateStamped tl_state_external;
+    bool found_perception = getHighestConfidenceTrafficLightState(traffic_lights, tl_state_perception);
+    bool found_external = getExternalTrafficLightState(traffic_lights, tl_state_external);
+
+    if(!found_perception && !found_external){
       // Don't stop when UNKNOWN or TIMEOUT as discussed at #508
       input_ = Input::NONE;
       return true;
     }
 
+    if(found_perception){
+      looking_tl_state_.perception.push_back(tl_state_perception);
+      input_ = Input::PERCEPTION;
+      tl_state = tl_state_perception;
+    }
+
+    if(found_external){
+      looking_tl_state_.external.push_back(tl_state_external);
+      input_ = Input::EXTERNAL;
+      tl_state = tl_state_external;
+    }
+
     // Check Traffic Light
-    if (isStopRequired(tl_state_.state)) {
+    if (isStopRequired(tl_state.state)) {
       for (size_t i = 0; i < lanelet_stop_line.size() - 1; i++) {
         const Line stop_line = {
           {lanelet_stop_line[i].x(), lanelet_stop_line[i].y()},
