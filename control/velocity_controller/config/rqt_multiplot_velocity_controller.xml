@@ -53,8 +53,8 @@
                                 </y_axis>
                             </axes>
                             <color>
-                                <custom_color>#000000</custom_color>
-                                <type>0</type>
+                                <custom_color>#ff0000</custom_color>
+                                <type>1</type>
                             </color>
                             <data>
                                 <circular_buffer_capacity>1000</circular_buffer_capacity>
@@ -104,8 +104,8 @@
                                 </y_axis>
                             </axes>
                             <color>
-                                <custom_color>#000000</custom_color>
-                                <type>0</type>
+                                <custom_color>#00fcff</custom_color>
+                                <type>1</type>
                             </color>
                             <data>
                                 <circular_buffer_capacity>1000</circular_buffer_capacity>
@@ -155,8 +155,8 @@
                                 </y_axis>
                             </axes>
                             <color>
-                                <custom_color>#000000</custom_color>
-                                <type>0</type>
+                                <custom_color>#7eff00</custom_color>
+                                <type>1</type>
                             </color>
                             <data>
                                 <circular_buffer_capacity>1000</circular_buffer_capacity>
@@ -206,8 +206,8 @@
                                 </y_axis>
                             </axes>
                             <color>
-                                <custom_color>#000000</custom_color>
-                                <type>0</type>
+                                <custom_color>#8400ff</custom_color>
+                                <type>1</type>
                             </color>
                             <data>
                                 <circular_buffer_capacity>1000</circular_buffer_capacity>
@@ -257,8 +257,8 @@
                                 </y_axis>
                             </axes>
                             <color>
-                                <custom_color>#000000</custom_color>
-                                <type>0</type>
+                                <custom_color>#ffc000</custom_color>
+                                <type>1</type>
                             </color>
                             <data>
                                 <circular_buffer_capacity>1000</circular_buffer_capacity>
@@ -308,8 +308,8 @@
                                 </y_axis>
                             </axes>
                             <color>
-                                <custom_color>#000000</custom_color>
-                                <type>0</type>
+                                <custom_color>#003cff</custom_color>
+                                <type>1</type>
                             </color>
                             <data>
                                 <circular_buffer_capacity>1000</circular_buffer_capacity>
@@ -359,8 +359,8 @@
                                 </y_axis>
                             </axes>
                             <color>
-                                <custom_color>#000000</custom_color>
-                                <type>0</type>
+                                <custom_color>#00ff42</custom_color>
+                                <type>1</type>
                             </color>
                             <data>
                                 <circular_buffer_capacity>1000</circular_buffer_capacity>
@@ -410,8 +410,8 @@
                                 </y_axis>
                             </axes>
                             <color>
-                                <custom_color>#000000</custom_color>
-                                <type>0</type>
+                                <custom_color>#ff00ba</custom_color>
+                                <type>1</type>
                             </color>
                             <data>
                                 <circular_buffer_capacity>1000</circular_buffer_capacity>
@@ -461,8 +461,8 @@
                                 </y_axis>
                             </axes>
                             <color>
-                                <custom_color>#000000</custom_color>
-                                <type>0</type>
+                                <custom_color>#ff6000</custom_color>
+                                <type>1</type>
                             </color>
                             <data>
                                 <circular_buffer_capacity>1000</circular_buffer_capacity>
@@ -512,8 +512,8 @@
                                 </y_axis>
                             </axes>
                             <color>
-                                <custom_color>#000000</custom_color>
-                                <type>0</type>
+                                <custom_color>#009cff</custom_color>
+                                <type>1</type>
                             </color>
                             <data>
                                 <circular_buffer_capacity>1000</circular_buffer_capacity>
@@ -592,7 +592,7 @@
                             <data>
                                 <circular_buffer_capacity>1000</circular_buffer_capacity>
                                 <time_frame_length>50</time_frame_length>
-                                <type>3</type>
+                                <type>0</type>
                             </data>
                             <style>
                                 <lines_interpolate>false</lines_interpolate>
@@ -643,7 +643,7 @@
                             <data>
                                 <circular_buffer_capacity>1000</circular_buffer_capacity>
                                 <time_frame_length>50</time_frame_length>
-                                <type>3</type>
+                                <type>0</type>
                             </data>
                             <style>
                                 <lines_interpolate>false</lines_interpolate>
@@ -997,7 +997,7 @@
                             <data>
                                 <circular_buffer_capacity>1000</circular_buffer_capacity>
                                 <time_frame_length>50</time_frame_length>
-                                <type>3</type>
+                                <type>0</type>
                             </data>
                             <style>
                                 <lines_interpolate>false</lines_interpolate>
@@ -1073,7 +1073,7 @@
                             <data>
                                 <circular_buffer_capacity>1000</circular_buffer_capacity>
                                 <time_frame_length>50</time_frame_length>
-                                <type>3</type>
+                                <type>0</type>
                             </data>
                             <style>
                                 <lines_interpolate>false</lines_interpolate>
