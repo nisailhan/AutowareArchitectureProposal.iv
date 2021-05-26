@@ -152,4 +152,17 @@ T transformVector(const T & points, const geometry_msgs::Transform & transform)
   }
   return transformed;
 }
+
+inline double calculateCurvature(
+  const geometry_msgs::Point & p1, const geometry_msgs::Point & p2, const geometry_msgs::Point & p3)
+{
+  // Calculation details are described in the following page
+  // https://en.wikipedia.org/wiki/Menger_curvature
+  const double denominator =
+    calcDistance2d(p1, p2) * calcDistance2d(p2, p3) * calcDistance2d(p3, p1);
+  if (std::fabs(denominator) < 1e-10) {
+    throw std::runtime_error("points are too close for curvature calculation.");
+  }
+  return 2.0 * ((p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x)) / denominator;
+}
 }  // namespace autoware_utils
