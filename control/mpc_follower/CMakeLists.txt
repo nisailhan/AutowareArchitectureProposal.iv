@@ -16,6 +16,7 @@ find_package(
   autoware_control_msgs
   autoware_vehicle_msgs
   osqp_interface
+  spline_interpolation
   dynamic_reconfigure
 )
 

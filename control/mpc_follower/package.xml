@@ -20,5 +20,6 @@
   <depend>autoware_control_msgs</depend>
   <depend>autoware_vehicle_msgs</depend>
   <depend>osqp_interface</depend>
+  <depend>spline_interpolation</depend>
   <!-- <depend>qpoases_vendor</depend> -->
 </package>
