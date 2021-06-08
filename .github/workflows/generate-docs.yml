@@ -4,30 +4,102 @@ on:
   push:
     branches:
       - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+    paths:
+      - "mkdocs.yml"
+      - "**/*.md"
+      - "**/*.svg"
+      - "**/*.png"
   workflow_dispatch:
 
+env:
+  GITHUB_PAGES_URL: https://tier4.github.io/autoware.iv
+
 jobs:
-  build:
+  generate-docs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Extract branch name
+        shell: bash
+        run: echo "::set-output name=branch::${GITHUB_REF#refs/heads/}"
+        id: extract_branch
+
+      - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Generate docs
-        run: |
-          cd docs
-          sudo apt-get update
-          sudo apt-get install doxygen graphviz
-          doxygen Doxyfile
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
 
-      - name: Move generated files
+      - name: Install MkDocs
         run: |
-          sudo chmod 775 docs/html
-          mv docs/html public
+          python3 -m pip install --upgrade pip setuptools wheel
+          pip3 install \
+            fontawesome_markdown \
+            markdown \
+            mdx_unimoji \
+            mkdocs \
+            mkdocs-exclude \
+            mkdocs-material \
+            mkdocs-same-dir \
+            plantuml-markdown \
+            pymdown-extensions \
+            python-markdown-math
+
+      - name: Remove non-document files
+        run: |
+          find . -type f \
+              -not -path './.git' \
+              -not -path './mkdocs.yml' \
+              -not -name '*.md' \
+              -not -name '*.svg' \
+              -not -name '*.png' \
+            | xargs -I {} rm "{}"
+
+      - name: Build MkDocs
+        run: |
+          mkdocs build -f mkdocs.yml --verbose --clean
+
+      - name: Print branch name (push)
+        if: ${{ !github.event.pull_request }}
+        run: |
+          echo "branch name: ${{ steps.extract_branch.outputs.branch }}"
+
+      - name: Move docs (push)
+        if: ${{ !github.event.pull_request }}
+        run: |
+          mkdir -p public/tree
+          mv site public/tree/${{ steps.extract_branch.outputs.branch }}
+
+      - name: Print PR number (pull_request)
+        if: ${{ github.event.pull_request }}
+        run: |
+          echo "PR number: ${{ github.event.pull_request.number }}"
+
+      - name: Move docs (pull_request)
+        if: ${{ github.event.pull_request }}
+        run: |
+          mkdir -p public/pulls
+          mv site public/pulls/${{ github.event.pull_request.number }}
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: 'public'
+          publish_dir: ./public
+          keep_files: true
+
+      - name: Comment PR
+        if: ${{ github.event.action == 'opened' }}
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          body: |
+            Documentation URL: ${{ env.GITHUB_PAGES_URL }}/pulls/${{ github.event.pull_request.number }}
