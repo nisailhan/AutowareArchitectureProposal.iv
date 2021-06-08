@@ -30,3 +30,4 @@
 #include <autoware_utils/ros/vehicle_info.h>
 #include <autoware_utils/ros/wait_for_param.h>
 #include <autoware_utils/system/stop_watch.h>
+#include <autoware_utils/trajectory/trajectory.h>

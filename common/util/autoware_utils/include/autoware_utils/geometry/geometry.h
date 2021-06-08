@@ -51,6 +51,21 @@ inline geometry_msgs::Point getPoint(const autoware_planning_msgs::TrajectoryPoi
   return p.pose.position;
 }
 
+inline geometry_msgs::Pose getPose(const geometry_msgs::Pose & p) { return p; }
+inline geometry_msgs::Pose getPose(const geometry_msgs::PoseStamped & p)
+{
+  return p.pose;
+}
+
+inline geometry_msgs::Pose getPose(const autoware_planning_msgs::PathPoint & p)
+{
+  return p.pose;
+}
+inline geometry_msgs::Pose getPose(const autoware_planning_msgs::TrajectoryPoint & p)
+{
+  return p.pose;
+}
+
 inline geometry_msgs::Point createPoint(const double x, const double y, const double z)
 {
   geometry_msgs::Point p;
