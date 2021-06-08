@@ -18,14 +18,12 @@
 #define VELOCITY_CONTROLLER_DELAY_COMPENSATION
 
 #include <autoware_planning_msgs/Trajectory.h>
+#include <autoware_utils/geometry/geometry.h>
 #include "velocity_controller_mathutils.h"
 
 class DelayCompensator
 {
 public:
-  DelayCompensator();
-  ~DelayCompensator();
-
   static geometry_msgs::PoseStamped calcPoseAfterTimeDelay(
     const geometry_msgs::PoseStamped & current_pose, const double delay_time,
     const double current_vel)
@@ -51,8 +49,8 @@ public:
 
     double sum_distance = 0.0;
     for (unsigned int i = closest_waypoint_index; i < trajectory.points.size() - 1; ++i) {
-      sum_distance +=
-        vcutils::calcDistance2D(trajectory.points.at(i).pose, trajectory.points.at(i + 1).pose);
+      sum_distance += autoware_utils::calcDistance2d(
+        trajectory.points.at(i).pose, trajectory.points.at(i + 1).pose);
       if (sum_distance > delay_distance) {
         return i;
       }

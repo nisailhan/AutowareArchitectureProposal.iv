@@ -24,7 +24,6 @@ class PIDController
 {
 public:
   PIDController();
-  ~PIDController() = default;
 
   double calculate(
     double error, double dt, bool is_integrated, std::vector<double> & pid_contributions);

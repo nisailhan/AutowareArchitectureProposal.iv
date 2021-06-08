@@ -391,7 +391,7 @@ void MotionVelocityOptimizer::publishStopDistance() const
   }
 
   int stop_idx = 0;
-  if (not vpu::searchZeroVelocityIdx(*traj, stop_idx)) {
+  if (!vpu::searchZeroVelocityIdx(*traj, stop_idx)) {
     ROS_WARN_THROTTLE(5.0, "[publish stop distance] cannot find stop index for input trajectory");
     return;
   }
@@ -406,7 +406,7 @@ void MotionVelocityOptimizer::publishStopDistance() const
   if (stop_idx - 1 >= 0) {
     before_stopline = vpu::calcWhichSideOfLine(traj->points.at(stop_idx).pose.position, traj->points.at(stop_idx - 1).pose.position, current_pose_ptr_->pose.position);
   } else {
-    before_stopline = not vpu::calcWhichSideOfLine(traj->points.at(stop_idx).pose.position, traj->points.at(stop_idx + 1).pose.position, current_pose_ptr_->pose.position);
+    before_stopline = !vpu::calcWhichSideOfLine(traj->points.at(stop_idx).pose.position, traj->points.at(stop_idx + 1).pose.position, current_pose_ptr_->pose.position);
   }
 
   /* calculate distance to round waypoint from current pose */

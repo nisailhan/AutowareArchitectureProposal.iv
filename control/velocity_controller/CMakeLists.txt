@@ -7,13 +7,14 @@ find_package(Eigen3 REQUIRED)
 
 find_package(
   catkin REQUIRED COMPONENTS
+  autoware_control_msgs
+  autoware_planning_msgs
+  autoware_utils
+  dynamic_reconfigure
+  geometry_msgs
   roscpp
   tf2
   tf2_ros
-  geometry_msgs
-  autoware_planning_msgs
-  autoware_control_msgs
-  dynamic_reconfigure
 )
 
 generate_dynamic_reconfigure_options(
@@ -23,12 +24,13 @@ generate_dynamic_reconfigure_options(
 catkin_package(
   INCLUDE_DIRS include
   CATKIN_DEPENDS
+    autoware_control_msgs
+    autoware_planning_msgs
+    autoware_utils
+    geometry_msgs
     roscpp
     tf2
     tf2_ros
-    geometry_msgs
-    autoware_planning_msgs
-    autoware_control_msgs
 )
 
 ###########

@@ -22,17 +22,45 @@
 #include <geometry_msgs/Pose.h>
 #include <ros/ros.h>
 #include <tf2/utils.h>
+#include <boost/optional.hpp>
 #include "autoware_planning_msgs/Trajectory.h"
+#include "autoware_utils/geometry/geometry.h"
+#include "autoware_utils/math/normalization.h"
 
 namespace vcutils
 {
-double calcDistance2D(const geometry_msgs::Pose & p1, const geometry_msgs::Pose & p2);
-double calcDistSquared2D(const geometry_msgs::Pose & p1, const geometry_msgs::Pose & p2);
-double calcPitch(const geometry_msgs::Pose & p1, const geometry_msgs::Pose & p2);
-double normalizeEulerAngle(double euler);
-bool calcClosestWithThr(
+boost::optional<int> searchZeroVelocityIdx(const autoware_planning_msgs::Trajectory & trajectory);
+boost::optional<double> calcLengthOnWaypoints(
+  const autoware_planning_msgs::Trajectory & path, const unsigned int source_idx,
+  const unsigned int target_idx);
+int calcClosestWaypoint(
+  const autoware_planning_msgs::Trajectory & traj, const geometry_msgs::Pose & pose);
+int calcClosestWaypoint(
   const autoware_planning_msgs::Trajectory & trajectory, const geometry_msgs::Pose & pose,
-  const double angle_thr, const double dist_thr, int32_t & closest_idx);
+  const double delta_yaw_threshold);
+template <class Point>
+bool judgePoseOverPoint(
+  const Point & pose, const autoware_planning_msgs::Trajectory & traj, const int target_idx);
+template <class Point>
+std::pair<double, double> calcTwoPointsInterpolatedLength(
+  const Point & p_target, const Point & p_from, const Point & p_to);
+void searchClosestTwoPoints(
+  const geometry_msgs::Pose & pose, const autoware_planning_msgs::Trajectory & traj,
+  signed int & min_idx, signed int & max_idx, double & min_idx_length, double & max_idx_length);
+void searchClosestTwoPoints(
+  const geometry_msgs::Pose & pose, const autoware_planning_msgs::Trajectory & traj,
+  signed int & min_idx, signed int & max_idx);
+boost::optional<double> calcTrajectoryLengthFromPose(
+  const geometry_msgs::Pose & pose, const autoware_planning_msgs::Trajectory & traj,
+  unsigned int target_idx);
+boost::optional<double> calcStopDistance(
+  const geometry_msgs::Pose & current_pose, const autoware_planning_msgs::Trajectory & traj);
+
+double calcPitch(const geometry_msgs::Pose & p1, const geometry_msgs::Pose & p2);
+// TODO use autoware_utils
+boost::optional<int> calcClosestWithThr(
+  const autoware_planning_msgs::Trajectory & trajectory, const geometry_msgs::Pose & pose,
+  const double angle_thr, const double dist_thr);
 geometry_msgs::Point transformToRelativeCoordinate2D(
   const geometry_msgs::Point & point, const geometry_msgs::Pose & origin);
 }  // namespace vcutils

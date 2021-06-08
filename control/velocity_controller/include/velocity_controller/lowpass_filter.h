@@ -14,13 +14,6 @@
  * limitations under the License.
  */
 
-/**
- * @file lowpass_filter.h
- * @brief vehicle model interface class
- * @author Takamasa Horibe
- * @date 2019.05.01
- */
-
 #ifndef VELOCITY_CONTROLLER_LOWPASS_FILTER
 #define VELOCITY_CONTROLLER_LOWPASS_FILTER
 
@@ -35,10 +28,6 @@ private:
   double gain_;  //!< @brief gain value of 1d filter
 
 public:
-  Lpf1d(double gain) : gain_(gain){};
-  Lpf1d(){};
-  ~Lpf1d() = default;
-
   void init(double gain)
   {
     gain_ = gain;

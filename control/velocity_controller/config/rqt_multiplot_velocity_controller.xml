@@ -1086,7 +1086,7 @@
                                 <type>0</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>state 0:Init 1:Ctrl 2:Stopped 3:SmoothStop 4:Emergency 5:Error</title>
+                            <title>state 0:Drive 1: Stopping 2:Stopped 3:Emergency</title>
                         </curve_0>
                     </curves>
                     <legend>
