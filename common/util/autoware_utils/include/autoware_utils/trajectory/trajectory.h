@@ -16,8 +16,15 @@
 
 #pragma once
 
+#include <limits>
+
+#include <boost/optional.hpp>
+
 #include <autoware_planning_msgs/Path.h>
 #include <autoware_planning_msgs/Trajectory.h>
+
+#include <autoware_utils/geometry/geometry.h>
+#include <autoware_utils/geometry/pose_deviation.h>
 
 namespace autoware_utils
 {
@@ -41,13 +48,15 @@ boost::optional<size_t> findClosestIndex(const T & points, const geometry_msgs::
   return boost::optional<size_t>(index_min);
 }
 
-boost::optional<size_t> findClosestIndex(
+template <>
+inline boost::optional<size_t> findClosestIndex(
   const autoware_planning_msgs::Path & path, const geometry_msgs::Point & point)
 {
   return findClosestIndex(path.points, point);
 }
 
-boost::optional<size_t> findClosestIndex(
+template <>
+inline boost::optional<size_t> findClosestIndex(
   const autoware_planning_msgs::Trajectory & traj, const geometry_msgs::Point & point)
 {
   return findClosestIndex(traj.points, point);
@@ -80,16 +89,18 @@ boost::optional<size_t> findClosestIndex(
   return is_closest_found ? boost::optional<size_t>(index_min) : boost::none;
 }
 
-boost::optional<size_t> findClosestIndex(
+template <>
+inline boost::optional<size_t> findClosestIndex(
   const autoware_planning_msgs::Path & path, const geometry_msgs::Pose & pose,
-  const double delta_yaw_threshold = std::numeric_limits<double>::max())
+  const double delta_yaw_threshold)
 {
   return findClosestIndex(path.points, pose, delta_yaw_threshold);
 }
 
-boost::optional<size_t> findClosestIndex(
+template <>
+inline boost::optional<size_t> findClosestIndex(
   const autoware_planning_msgs::Trajectory & traj, const geometry_msgs::Pose & pose,
-  const double delta_yaw_threshold = std::numeric_limits<double>::max())
+  const double delta_yaw_threshold)
 {
   return findClosestIndex(traj.points, pose, delta_yaw_threshold);
 }

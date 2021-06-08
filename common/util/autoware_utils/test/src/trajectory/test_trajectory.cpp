@@ -16,7 +16,6 @@
 
 #include <gtest/gtest.h>
 
-#include <autoware_utils/geometry/geometry.h>
 #include <autoware_utils/trajectory/trajectory.h>
 
 #include <tf2/LinearMath/Quaternion.h>
@@ -133,8 +132,8 @@ TEST(Trajectory, calcPathClosestPointIndex)
       std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), 0.0);
     auto closest_path_point = findClosestIndex(path, p);
     auto closest_traj_point = findClosestIndex(traj, p);
-    EXPECT_FALSE(closest_path_point);
-    EXPECT_FALSE(closest_traj_point);
+    EXPECT_TRUE(closest_path_point);
+    EXPECT_TRUE(closest_traj_point);
   }
 
   // Empty Point
