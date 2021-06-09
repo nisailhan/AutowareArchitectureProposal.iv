@@ -88,7 +88,7 @@ private:
   // For destructor to know if matrices P, A are in
   bool problem_in_memory = false;
 
-  // Flag to check if the currnet work exists
+  // Flag to check if the current work exists
   bool work_initialized = false;
 
   // Runs the solver on the stored problem.
@@ -232,6 +232,8 @@ public:
   void updateMaxIter(const int iter);
   void updateVerbose(const bool verbose);
   void updateRhoInterval(const int rho_interval);
+  void updateRho(const double rho);
+  void updateAlpha(const double alpha);
 
   int getTakenIter() {return static_cast<int>(latest_work_info.iter);}
   std::string getStatusMessage() {return static_cast<std::string>(latest_work_info.status);}
