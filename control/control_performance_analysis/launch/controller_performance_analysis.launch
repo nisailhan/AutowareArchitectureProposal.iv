@@ -1,0 +1,24 @@
+<launch>
+
+    <arg name="control_performance_analysis_param_path"
+         default="$(find control_performance_analysis)/config/control_performance_analysis_param.yaml"/>
+
+    <arg name="input/reference_trajectory" default="/planning/scenario_planning/trajectory"/>
+    <arg name="input/control_raw" default="/control/trajectory_follower/lateral/control_cmd"/>
+    <arg name="input/measured_steering" default="/vehicle/status/steering"/>
+    <arg name="input/current_velocity" default="/localization/twist"/>
+    <arg name="output/error_stamped" default="/control_performance/performance_vars"/>
+
+
+    <node pkg="control_performance_analysis" type="control_performance_analysis"
+          name="control_performance_analysis" output="screen">
+
+        <rosparam command="load" file="$(arg control_performance_analysis_param_path)"/>
+
+        <remap from="~input/reference_trajectory" to="$(arg input/reference_trajectory)"/>
+        <remap from="~input/control_raw" to="$(arg input/control_raw)"/>
+        <remap from="~input/current_velocity" to="$(arg input/current_velocity)"/>
+        <remap from="~output/error_stamped" to="$(arg output/error_stamped)"/>
+
+    </node>
+</launch>
