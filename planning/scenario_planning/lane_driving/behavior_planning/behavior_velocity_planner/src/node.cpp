@@ -148,7 +148,6 @@ BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode()
   // Parameters
   pnh_.param("forward_path_length", forward_path_length_, 1000.0);
   pnh_.param("backward_path_length", backward_path_length_, 5.0);
-  pnh_.param("lowpass_gain", planner_data_.accel_lowpass_gain, 0.5);
 
   // Vehicle Parameters
   planner_data_.wheel_base = waitForParam<double>(pnh_, "/vehicle_info/wheel_base");
@@ -161,9 +160,12 @@ BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode()
   // TODO read min_acc in velocity_controller_param.yaml?
   pnh_.param("max_jerk", planner_data_.max_stop_jerk_threshold, -5.0);
   pnh_.param("delay_response_time", planner_data_.delay_response_time, 0.50);
-  pnh_.param("yellow_lamp_period", planner_data_.yellow_lamp_period, 2.75);
   // TODO(Kenji Miyake): get from additional vehicle_info?
   planner_data_.base_link2front = planner_data_.front_overhang + planner_data_.wheel_base;
+  // TODO This will become unnecessary when acc output from localization is available.
+  pnh_.param(
+    "lowpass_gain", planner_data_.accel_lowpass_gain_,
+    0.5);
 
   // Initialize PlannerManager
   if (getParam<bool>(pnh_, "launch_stop_line", true))

@@ -150,9 +150,9 @@ geometry_msgs::Pose transformAbsCoordinate2D(
   return absolute;
 }
 
-double calcJudgeLineDist(
+double calcJudgeLineDistWithAccLimit(
   const double velocity, const double max_stop_acceleration,
-  const double delay_response_time)  // TODO: also consider jerk
+  const double delay_response_time)
 {
   double judge_line_dist =
     (velocity * velocity) / (2.0 * (-max_stop_acceleration)) + delay_response_time * velocity;

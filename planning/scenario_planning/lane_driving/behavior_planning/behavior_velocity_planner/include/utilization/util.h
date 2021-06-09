@@ -100,11 +100,11 @@ geometry_msgs::Pose transformRelCoordinate2D(
 geometry_msgs::Pose transformAbsCoordinate2D(
   const geometry_msgs::Pose & relative, const geometry_msgs::Pose & origin);
 
-double calcJudgeLineDist(
+double calcJudgeLineDistWithAccLimit(
   const double velocity, const double max_stop_acceleration, const double delay_response_time);
 
 double calcJudgeLineDistWithJerkLimit(
-  const double velocity, const double accelerartion, const double max_stop_acceleration,
+  const double velocity, const double acceleration, const double max_stop_acceleration,
   const double max_stop_jerk, const double delay_response_time);
 
 autoware_planning_msgs::StopReason initializeStopReason(const std::string & stop_reason);

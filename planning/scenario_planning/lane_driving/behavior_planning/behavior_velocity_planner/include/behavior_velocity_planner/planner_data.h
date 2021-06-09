@@ -46,6 +46,7 @@
 #include <lanelet2_routing/RoutingGraphContainer.h>
 #include <lanelet2_traffic_rules/TrafficRulesFactory.h>
 
+class BehaviorVelocityPlannerNode;
 struct PlannerData
 {
   // tf
@@ -53,7 +54,7 @@ struct PlannerData
 
   // msgs from callbacks that are used for data-ready
   geometry_msgs::TwistStamped::ConstPtr current_velocity;
-  geometry_msgs::TwistStamped::ConstPtr prev_velocity;
+  double current_accel;
   static constexpr double velocity_buffer_time_sec = 10.0;
   std::deque<geometry_msgs::TwistStamped> velocity_buffer;
   autoware_perception_msgs::DynamicObjectArray::ConstPtr dynamic_objects;
@@ -83,29 +84,6 @@ struct PlannerData
   double max_stop_acceleration_threshold;
   double max_stop_jerk_threshold;
   double delay_response_time;
-  double yellow_lamp_period;
-
-  // calc current acceleration
-  double current_accel;
-  double prev_accel;
-  double accel_lowpass_gain;
-
-  void updateCurrentAcc()
-  {
-    if (prev_velocity) {
-      const double dv = current_velocity->twist.linear.x - prev_velocity->twist.linear.x;
-      const double dt =
-        std::max((current_velocity->header.stamp - prev_velocity->header.stamp).toSec(), 1e-03);
-      const double accel = dv / dt;
-      // apply lowpass filter
-      current_accel = accel_lowpass_gain * accel + (1.0 - accel_lowpass_gain) * prev_accel;
-    } else {
-      current_accel = 0.0;
-    }
-
-    prev_velocity = current_velocity;
-    prev_accel = current_accel;
-  }
 
   bool isVehicleStopped(const double stop_duration = 0.0) const
   {
@@ -153,4 +131,27 @@ struct PlannerData
     return std::make_shared<autoware_perception_msgs::TrafficLightStateStamped>(
       external_traffic_light_id_map.at(id));
   }
+
+private:
+  double prev_accel_;
+  geometry_msgs::TwistStamped::ConstPtr prev_velocity_;
+  double accel_lowpass_gain_;
+
+  void updateCurrentAcc()
+  {
+    if (prev_velocity_) {
+      const double dv = current_velocity->twist.linear.x - prev_velocity_->twist.linear.x;
+      const double dt =
+        std::max((current_velocity->header.stamp - prev_velocity_->header.stamp).toSec(), 1e-03);
+      const double accel = dv / dt;
+      // apply lowpass filter
+      current_accel = accel_lowpass_gain_ * accel + (1.0 - accel_lowpass_gain_) * prev_accel_;
+    } else {
+      current_accel = 0.0;
+    }
+
+    prev_velocity_ = current_velocity;
+    prev_accel_ = current_accel;
+  }
+  friend BehaviorVelocityPlannerNode;
 };

@@ -249,7 +249,7 @@ bool generateStopLine(
   const double max_acc = planner_data->max_stop_acceleration_threshold;
   const double delay_response_time = planner_data->delay_response_time;
   const double pass_judge_line_dist =
-    planning_utils::calcJudgeLineDist(current_vel, max_acc, delay_response_time);
+    planning_utils::calcJudgeLineDistWithAccLimit(current_vel, max_acc, delay_response_time);
 
   /* set parameters */
   constexpr double interval = 0.2;
@@ -264,7 +264,7 @@ bool generateStopLine(
 
   /* generate stop point */
   // If a stop_line is defined in lanelet_map, use it.
-  // else, generates a local stop_line with considering the lane conflictions.
+  // else, generates a local stop_line with considering the lane conflicts.
   int first_idx_ip_inside_lane;  // first stop point index for interpolated path.
   int stop_idx_ip;               // stop point index for interpolated path.
   geometry_msgs::Point stop_point_from_map;

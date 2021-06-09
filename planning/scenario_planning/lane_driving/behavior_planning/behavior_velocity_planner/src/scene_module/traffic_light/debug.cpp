@@ -25,9 +25,9 @@ namespace
 using DebugData = TrafficLightModule::DebugData;
 
 visualization_msgs::MarkerArray createMarkerArray(
-  const DebugData & debug_data, const int64_t lane_id)
+  const DebugData & debug_data, const int64_t module_id)
 {
-  int32_t uid = planning_utils::bitShift(lane_id);
+  int32_t uid = planning_utils::bitShift(module_id);
   visualization_msgs::MarkerArray msg;
   ros::Time current_time = ros::Time::now();
   tf2::Transform tf_base_link2front(
@@ -141,7 +141,7 @@ visualization_msgs::MarkerArray TrafficLightModule::createDebugMarkerArray()
 {
   visualization_msgs::MarkerArray debug_marker_array;
 
-  appendMarkerArray(createMarkerArray(debug_data_, lane_id_), &debug_marker_array);
+  appendMarkerArray(createMarkerArray(debug_data_, module_id_), &debug_marker_array);
 
   return debug_marker_array;
 }

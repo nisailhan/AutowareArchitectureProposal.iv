@@ -60,6 +60,7 @@ TrafficLightModuleManager::TrafficLightModuleManager()
   pnh.param(ns + "/tl_state_timeout", p.tl_state_timeout, 1.0);
   pnh.param(ns + "/external_tl_state_timeout", p.external_tl_state_timeout, 1.0);
   pnh.param(ns + "/enable_pass_judge", p.enable_pass_judge, true);
+  pnh.param(ns + "/yellow_lamp_period", p.yellow_lamp_period, 2.75);
   pub_tl_state_ = pnh.advertise<autoware_perception_msgs::LookingTrafficLightState>(
     "output/traffic_light_state", 1);
 }
@@ -82,7 +83,7 @@ void TrafficLightModuleManager::modifyPathVelocity(autoware_planning_msgs::PathW
   tl_state.final_judge = judge;
 
   stop_reason_array.header.frame_id = "map";
-  stop_reason_array.header.stamp = ros::Time::now();
+  stop_reason_array.header.stamp = path->header.stamp;
   first_stop_path_point_index_ = static_cast<int>(path->points.size());
   for (const auto & scene_module : scene_modules_) {
     autoware_planning_msgs::StopReason stop_reason;
