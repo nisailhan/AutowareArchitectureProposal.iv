@@ -29,6 +29,8 @@
 #include <nav_msgs/Path.h>
 #include <std_msgs/Header.h>
 
+#include "astar_search/reeds_shepp.h"
+
 enum class NodeStatus : uint8_t { None, Open, Closed, Obstacle };
 
 struct IndexXYT
@@ -190,6 +192,9 @@ private:
 
   // result path
   AstarWaypoints waypoints_;
+
+  // distance metric option (removed when the reeds_shepp gets stable)
+  bool use_reeds_shepp_;
 };
 
 #endif

@@ -21,15 +21,18 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+add_library(reeds_shepp src/reeds_shepp.cpp)
+
 add_library(astar_search
   src/astar_search.cpp
 )
 
 target_link_libraries(astar_search
+  reeds_shepp
   ${catkin_LIBRARIES}
 )
 
-add_dependencies(astar_search
+add_dependencies(astar_search reeds_shepp
   ${catkin_EXPORTED_TARGETS}
 )
 
@@ -43,6 +46,9 @@ install(TARGETS astar_search
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
+
 if(CATKIN_ENABLE_TESTING)
-  find_package(rostest REQUIRED)
+    find_package(rostest REQUIRED)
+    add_rostest_gtest(astar_search-test test/test_astar_search.test test/src/test_astar_search.cpp)
+    target_link_libraries(astar_search-test ${catkin_LIBRARIES} astar_search)
 endif()
