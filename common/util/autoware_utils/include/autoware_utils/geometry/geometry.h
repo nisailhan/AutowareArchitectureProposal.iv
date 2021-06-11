@@ -168,7 +168,7 @@ T transformVector(const T & points, const geometry_msgs::Transform & transform)
   return transformed;
 }
 
-inline double calculateCurvature(
+inline double calcCurvature(
   const geometry_msgs::Point & p1, const geometry_msgs::Point & p2, const geometry_msgs::Point & p3)
 {
   // Calculation details are described in the following page
