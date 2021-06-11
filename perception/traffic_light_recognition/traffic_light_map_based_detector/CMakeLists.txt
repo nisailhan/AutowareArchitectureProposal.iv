@@ -6,7 +6,9 @@ add_compile_options(-std=c++14)
 find_package(catkin REQUIRED COMPONENTS
   autoware_perception_msgs
   autoware_planning_msgs
+  autoware_utils
   geometry_msgs
+  image_geometry
   lanelet2_extension
   roscpp
   sensor_msgs
@@ -20,7 +22,9 @@ catkin_package(
   CATKIN_DEPENDS
     autoware_perception_msgs
     autoware_planning_msgs
+    autoware_utils
     geometry_msgs
+    image_geometry
     lanelet2_extension
     roscpp
     sensor_msgs
