@@ -144,7 +144,8 @@ bool test_astar(
   }
   file.close();
 
-  return success;
+  // backtrace the path and confirm that the entire path is collision-free
+  return success && astar.hasFeasibleSolution();
 }
 
 TEST(AstarSearchTestSuite, SingleCurvature)

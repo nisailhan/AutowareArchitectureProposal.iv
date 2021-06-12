@@ -197,7 +197,7 @@ AstarSearch::TransitionTable createTransitionTable(
 }  // namespace
 
 AstarSearch::AstarSearch(const AstarParam & astar_param)
-: astar_param_(astar_param), use_reeds_shepp_(true)
+: astar_param_(astar_param), goal_node_(nullptr), use_reeds_shepp_(true)
 {
   transition_table_ = createTransitionTable(
     astar_param_.minimum_turning_radius, astar_param_.maximum_turning_radius,
@@ -233,6 +233,13 @@ void AstarSearch::initializeNodes(const nav_msgs::OccupancyGrid & costmap)
         nodes_[i][j][0].status = NodeStatus::Obstacle;
       }
     }
+  }
+
+  // construct collision indexes table
+  for (int i = 0; i < astar_param_.theta_size; i++) {
+    std::vector<IndexXY> indexes_2d;
+    computeCollisionIndexes(i, indexes_2d);
+    coll_indexes_table_.push_back(indexes_2d);
   }
 }
 
@@ -323,6 +330,7 @@ bool AstarSearch::search()
     current_node->status = NodeStatus::Closed;
 
     if (isGoal(*current_node)) {
+      goal_node_ = current_node;
       setPath(*current_node);
       return true;
     }
@@ -405,8 +413,9 @@ void AstarSearch::setPath(const AstarNode & goal_node)
   }
 }
 
-bool AstarSearch::detectCollision(const IndexXYT & base_index)
+void AstarSearch::computeCollisionIndexes(int theta_index, std::vector<IndexXY> & indexes_2d)
 {
+  IndexXYT base_index{0, 0, theta_index};
   const RobotShape & robot_shape = astar_param_.robot_shape;
 
   // Define the robot as rectangle
@@ -430,17 +439,30 @@ bool AstarSearch::detectCollision(const IndexXYT & base_index)
       pose_local.position.y = base_pose.position.y + offset_y;
 
       const auto index = pose2index(costmap_, pose_local, astar_param_.theta_size);
-
-      if (isOutOfRange(index)) {
-        return true;
-      }
-
-      if (isObs(index)) {
-        return true;
-      }
+      const auto index_2d = IndexXY{index.x, index.y};
+      indexes_2d.push_back(index_2d);
     }
   }
+}
 
+bool AstarSearch::detectCollision(const IndexXYT & base_index)
+{
+  const auto & coll_indexes_2d = coll_indexes_table_[base_index.theta];
+  for (const auto & coll_index_2d : coll_indexes_2d) {
+    int idx_theta = 0;  // whatever. Yaw is nothing to do with collision detection between grids.
+    IndexXYT coll_index{coll_index_2d.x, coll_index_2d.y, idx_theta};
+    // must slide to current base position
+    coll_index.x += base_index.x;
+    coll_index.y += base_index.y;
+
+    if (isOutOfRange(coll_index)) {
+      return true;
+    }
+
+    if (isObs(coll_index)) {
+      return true;
+    }
+  }
   return false;
 }
 
@@ -456,6 +478,22 @@ bool AstarSearch::hasObstacleOnTrajectory(const geometry_msgs::PoseArray & traje
   }
 
   return false;
+}
+
+bool AstarSearch::hasFeasibleSolution()
+{
+  if (goal_node_ == nullptr) {
+    return false;
+  }
+  const AstarNode * node = goal_node_;
+  while (node != nullptr) {
+    auto index = pose2index(costmap_, node2pose(*node), astar_param_.theta_size);
+    if (isOutOfRange(index) || detectCollision(index)) {
+      return false;
+    }
+    node = node->parent;
+  }
+  return true;
 }
 
 bool AstarSearch::isOutOfRange(const IndexXYT & index)

@@ -159,6 +159,7 @@ public:
   void initializeNodes(const nav_msgs::OccupancyGrid & costmap);
   bool makePlan(const geometry_msgs::Pose & start_pose, const geometry_msgs::Pose & goal_pose);
   bool hasObstacleOnTrajectory(const geometry_msgs::PoseArray & trajectory);
+  bool hasFeasibleSolution();  // currently used only in testing
 
   const AstarWaypoints & getWaypoints() const { return waypoints_; }
 
@@ -169,6 +170,7 @@ private:
   bool setGoalNode();
   double estimateCost(const geometry_msgs::Pose & pose);
 
+  void computeCollisionIndexes(int theta_index, std::vector<IndexXY> & indexes);
   bool detectCollision(const IndexXYT & index);
   bool isOutOfRange(const IndexXYT & index);
   bool isObs(const IndexXYT & index);
@@ -193,8 +195,14 @@ private:
   // result path
   AstarWaypoints waypoints_;
 
+  // goal node, which may helpful in testing and debugging
+  AstarNode * goal_node_;
+
   // distance metric option (removed when the reeds_shepp gets stable)
   bool use_reeds_shepp_;
+  //
+  // collision indexes cache
+  std::vector<std::vector<IndexXY>> coll_indexes_table_;
 };
 
 #endif
