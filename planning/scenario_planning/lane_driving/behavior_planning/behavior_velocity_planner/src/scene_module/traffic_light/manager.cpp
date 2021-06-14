@@ -71,16 +71,8 @@ void TrafficLightModuleManager::modifyPathVelocity(autoware_planning_msgs::PathW
   autoware_planning_msgs::StopReasonArray stop_reason_array;
   autoware_perception_msgs::LookingTrafficLightState tl_state;
 
-  autoware_perception_msgs::TrafficLightJudgeStamped judge;
-  judge.header.stamp = path->header.stamp;
-  judge.judge = autoware_perception_msgs::TrafficLightJudgeStamped::NONE;
-  judge.signal_source = autoware_perception_msgs::TrafficLightJudgeStamped::NO_SIGNAL;
-
   tl_state.header.stamp = path->header.stamp;
-  tl_state.module = false;
-  tl_state.perception_judge = judge;
-  tl_state.external_judge = judge;
-  tl_state.final_judge = judge;
+  tl_state.is_module_running = false;
 
   stop_reason_array.header.frame_id = "map";
   stop_reason_array.header.stamp = path->header.stamp;
