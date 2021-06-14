@@ -16,277 +16,414 @@
 
 #include <gtest/gtest.h>
 
+#include <autoware_utils/geometry/boost_geometry.h>
 #include <autoware_utils/trajectory/trajectory.h>
 
 #include <tf2/LinearMath/Quaternion.h>
 
 namespace
 {
-autoware_planning_msgs::Path generateTestPath()
+using autoware_planning_msgs::Trajectory;
+using autoware_utils::createPoint;
+using autoware_utils::createQuaternionFromRPY;
+using autoware_utils::transformPoint;
+
+constexpr double epsilon = 1e-6;
+
+geometry_msgs::Pose createPose(double x, double y, double z, double roll, double pitch, double yaw)
 {
-  // Generate Straight Path
-  autoware_planning_msgs::Path path;
-
-  for (double x = 0.0; x <= 10.0; x += 1.0) {
-    autoware_planning_msgs::PathPoint p;
-    p.pose.position = autoware_utils::createPoint(x, 0.0, 0.0);
-    tf2::convert(autoware_utils::createQuaternionFromRPY(0.0, 0.0, 0.0), p.pose.orientation);
-
-    path.points.push_back(p);
-  }
-
-  return path;
+  geometry_msgs::Pose p;
+  p.position = createPoint(x, y, z);
+  tf2::convert(createQuaternionFromRPY(roll, pitch, yaw), p.orientation);
+  return p;
 }
 
-autoware_planning_msgs::Trajectory generateTestTrajectory()
+geometry_msgs::Point transformGeometryPoint(
+  const geometry_msgs::Point & point, const geometry_msgs::Transform & transform)
 {
-  // Generate Straight Trajectory
-  autoware_planning_msgs::Trajectory traj;
+  const auto transformed = transformPoint(autoware_utils::fromMsg(point), transform);
+  return autoware_utils::toMsg(transformed);
+}
 
-  for (double x = 0.0; x <= 10.0; x += 1.0) {
-    autoware_planning_msgs::TrajectoryPoint p;
-    p.pose.position = autoware_utils::createPoint(x, 0.0, 0.0);
-    tf2::convert(autoware_utils::createQuaternionFromRPY(0.0, 0.0, 0.0), p.pose.orientation);
+template <class T>
+T generateTestTrajectory(
+  const size_t num_points, const double point_interval, const double vel = 0.0,
+  const double init_theta = 0.0, const double delta_theta = 0.0)
+{
+  using Point = typename T::_points_type::value_type;
 
+  T traj;
+  for (size_t i = 0; i < num_points; ++i) {
+    const double theta = init_theta + i * delta_theta;
+    const double x = i * point_interval * std::cos(theta);
+    const double y = i * point_interval * std::sin(theta);
+
+    Point p;
+    p.pose = createPose(x, y, 0.0, 0.0, 0.0, theta);
+    p.twist.linear.x = vel;
     traj.points.push_back(p);
   }
 
   return traj;
 }
 
+template <class T>
+void updateTrajectoryVelocityAt(T & points, const size_t idx, const double vel)
+{
+  points.at(idx).twist.linear.x = vel;
+}
 }  // namespace
 
-TEST(Trajectory, calcPathClosestPointIndex)
+TEST(trajectory, validateNonEmpty)
 {
-  using autoware_utils::findClosestIndex;
+  using autoware_utils::validateNonEmpty;
 
-  autoware_planning_msgs::Path path = generateTestPath();
-  autoware_planning_msgs::Trajectory traj = generateTestTrajectory();
+  // Empty
+  EXPECT_THROW(validateNonEmpty(Trajectory{}.points), std::invalid_argument);
 
-  // Initial Point
+  // Non-empty
+  const auto traj = generateTestTrajectory<Trajectory>(10, 1.0);
+  EXPECT_NO_THROW(validateNonEmpty(traj.points));
+}
+
+TEST(trajectory, searchZeroVelocityIndex)
+{
+  using autoware_utils::searchZeroVelocityIndex;
+
+  // Empty
+  EXPECT_THROW(searchZeroVelocityIndex(Trajectory{}.points), std::invalid_argument);
+
+  // No zero velocity point
   {
-    geometry_msgs::Point p = autoware_utils::createPoint(0.0, 0.0, 0.0);
-    auto closest_path_point = findClosestIndex(path, p);
-    auto closest_traj_point = findClosestIndex(traj, p);
-    EXPECT_EQ(*closest_path_point, 0);
-    EXPECT_EQ(*closest_traj_point, 0);
+    const auto traj = generateTestTrajectory<Trajectory>(10, 1.0, 1.0);
+    EXPECT_FALSE(searchZeroVelocityIndex(traj.points));
   }
 
-  // End Point
+  // Only start point is zero
   {
-    geometry_msgs::Point p = autoware_utils::createPoint(10.0, 0.0, 0.0);
-    auto closest_path_point = findClosestIndex(path, p);
-    auto closest_traj_point = findClosestIndex(traj, p);
-    EXPECT_EQ(*closest_path_point, 10);
-    EXPECT_EQ(*closest_traj_point, 10);
+    const size_t idx_ans = 0;
+
+    auto traj = generateTestTrajectory<Trajectory>(10, 1.0, 1.0);
+    updateTrajectoryVelocityAt(traj.points, idx_ans, 0.0);
+
+    EXPECT_EQ(*searchZeroVelocityIndex(traj.points), idx_ans);
   }
 
-  // Middle Point
+  // Only end point is zero
   {
-    geometry_msgs::Point p = autoware_utils::createPoint(0.5, 0.0, 0.0);
-    auto closest_path_point = findClosestIndex(path, p);
-    auto closest_traj_point = findClosestIndex(traj, p);
-    EXPECT_EQ(*closest_path_point, 0);
-    EXPECT_EQ(*closest_traj_point, 0);
+    const size_t idx_ans = 9;
+
+    auto traj = generateTestTrajectory<Trajectory>(10, 1.0, 1.0);
+    updateTrajectoryVelocityAt(traj.points, idx_ans, 0.0);
+
+    EXPECT_EQ(*searchZeroVelocityIndex(traj.points), idx_ans);
   }
 
-  // Arbitrary Point inside the path
+  // Only middle point is zero
   {
-    geometry_msgs::Point p = autoware_utils::createPoint(4.0, 0.0, 0.0);
-    auto closest_path_point = findClosestIndex(path, p);
-    auto closest_traj_point = findClosestIndex(traj, p);
-    EXPECT_EQ(*closest_path_point, 4);
-    EXPECT_EQ(*closest_traj_point, 4);
+    const size_t idx_ans = 5;
+
+    auto traj = generateTestTrajectory<Trajectory>(10, 1.0, 1.0);
+    updateTrajectoryVelocityAt(traj.points, idx_ans, 0.0);
+
+    EXPECT_EQ(*searchZeroVelocityIndex(traj.points), idx_ans);
   }
 
-  // Point outside the path on the left
+  // Two points are zero
   {
-    geometry_msgs::Point p = autoware_utils::createPoint(-4.0, 5.0, 0.0);
-    auto closest_path_point = findClosestIndex(path, p);
-    auto closest_traj_point = findClosestIndex(traj, p);
-    EXPECT_EQ(*closest_path_point, 0);
-    EXPECT_EQ(*closest_traj_point, 0);
+    const size_t idx_ans = 3;
+
+    auto traj = generateTestTrajectory<Trajectory>(10, 1.0, 1.0);
+    updateTrajectoryVelocityAt(traj.points, idx_ans, 0.0);
+    updateTrajectoryVelocityAt(traj.points, 6, 0.0);
+
+    EXPECT_EQ(*searchZeroVelocityIndex(traj.points), idx_ans);
   }
 
-  // Point outside the path on the right
+  // Negative velocity point is before zero velocity point
   {
-    geometry_msgs::Point p = autoware_utils::createPoint(100.0, -3.0, 0.0);
-    auto closest_path_point = findClosestIndex(path, p);
-    auto closest_traj_point = findClosestIndex(traj, p);
-    EXPECT_EQ(*closest_path_point, 10);
-    EXPECT_EQ(*closest_traj_point, 10);
-  }
+    const size_t idx_ans = 3;
 
-  // Arbitrary Point inside the path
-  {
-    geometry_msgs::Point p = autoware_utils::createPoint(2.431, 1.391, 0.0);
-    auto closest_path_point = findClosestIndex(path, p);
-    auto closest_traj_point = findClosestIndex(traj, p);
-    EXPECT_EQ(*closest_path_point, 2);
-    EXPECT_EQ(*closest_traj_point, 2);
-  }
+    auto traj = generateTestTrajectory<Trajectory>(10, 1.0, 1.0);
+    updateTrajectoryVelocityAt(traj.points, 2, -1.0);
+    updateTrajectoryVelocityAt(traj.points, idx_ans, 0.0);
 
-  // Inf Point
-  {
-    geometry_msgs::Point p = autoware_utils::createPoint(
-      std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), 0.0);
-    auto closest_path_point = findClosestIndex(path, p);
-    auto closest_traj_point = findClosestIndex(traj, p);
-    EXPECT_TRUE(closest_path_point);
-    EXPECT_TRUE(closest_traj_point);
-  }
-
-  // Empty Point
-  {
-    geometry_msgs::Point p = autoware_utils::createPoint(0.0, 0.0, 0.0);
-    autoware_planning_msgs::Path empty_path;
-    autoware_planning_msgs::Trajectory empty_traj;
-    auto closest_path_point = findClosestIndex(empty_path, p);
-    auto closest_traj_point = findClosestIndex(empty_traj, p);
-    EXPECT_FALSE(closest_path_point);
-    EXPECT_FALSE(closest_traj_point);
+    EXPECT_EQ(*searchZeroVelocityIndex(traj.points), idx_ans);
   }
 }
 
-TEST(Trajectory, calcTrajectoryClosestPoint)
+TEST(trajectory, findNearestIndex_StraightTrajectory)
 {
-  using autoware_utils::findClosestIndex;
+  using autoware_utils::findNearestIndex;
 
-  autoware_planning_msgs::Path path = generateTestPath();
-  autoware_planning_msgs::Trajectory traj = generateTestTrajectory();
+  const auto traj = generateTestTrajectory<Trajectory>(10, 1.0);
 
-  // Initial Pose
+  // Empty
+  EXPECT_THROW(
+    findNearestIndex(Trajectory{}.points, geometry_msgs::Point{}), std::invalid_argument);
+
+  // Start point
+  EXPECT_EQ(findNearestIndex(traj.points, createPoint(0.0, 0.0, 0.0)), 0);
+
+  // End point
+  EXPECT_EQ(findNearestIndex(traj.points, createPoint(9.0, 0.0, 0.0)), 9);
+
+  // Boundary conditions
+  EXPECT_EQ(findNearestIndex(traj.points, createPoint(0.5, 0.0, 0.0)), 0);
+  EXPECT_EQ(findNearestIndex(traj.points, createPoint(0.51, 0.0, 0.0)), 1);
+
+  // Point before start point
+  EXPECT_EQ(findNearestIndex(traj.points, createPoint(-4.0, 5.0, 0.0)), 0);
+
+  // Point after end point
+  EXPECT_EQ(findNearestIndex(traj.points, createPoint(100.0, -3.0, 0.0)), 9);
+
+  // Random cases
+  EXPECT_EQ(findNearestIndex(traj.points, createPoint(2.4, 1.3, 0.0)), 2);
+  EXPECT_EQ(findNearestIndex(traj.points, createPoint(4.0, 0.0, 0.0)), 4);
+}
+
+TEST(trajectory, findNearestIndex_CurvedTrajectory)
+{
+  using autoware_utils::findNearestIndex;
+
+  const auto traj = generateTestTrajectory<Trajectory>(10, 1.0, 0.0, 0.0, 0.1);
+
+  // Random cases
+  EXPECT_EQ(findNearestIndex(traj.points, createPoint(5.1, 3.4, 0.0)), 6);
+}
+
+TEST(trajectory, findNearestIndexWithYawThreshold)
+{
+  using autoware_utils::findNearestIndex;
+
+  const auto traj = generateTestTrajectory<Trajectory>(10, 1.0);
+
+  // Empty
+  EXPECT_THROW(
+    findNearestIndex(Trajectory{}.points, geometry_msgs::Pose{}, {}), std::invalid_argument);
+
+  // Start point
+  EXPECT_EQ(*findNearestIndex(traj.points, createPose(0.0, 0.0, 0.0, 0.0, 0.0, 0.0), M_PI), 0);
+
+  // Start point with 180 degrees angle deviations
+  EXPECT_FALSE(findNearestIndex(traj.points, createPose(0.0, 0.0, 0.0, 0.0, 0.0, M_PI), M_PI));
+
+  // Start point with 270(-90) degrees angle deviations
+  EXPECT_EQ(
+    *findNearestIndex(traj.points, createPose(0.0, 0.0, 0.0, 0.0, 0.0, 1.5 * M_PI), M_PI), 0);
+
+  // End point
+  EXPECT_EQ(*findNearestIndex(traj.points, createPose(9.0, 0.0, 0.0, 0.0, 0.0, 0.0), M_PI), 9);
+
+  // Boundary conditions
+  EXPECT_EQ(*findNearestIndex(traj.points, createPose(0.5, 0.0, 0.0, 0.0, 0.0, 0.0), M_PI), 0);
+  EXPECT_EQ(*findNearestIndex(traj.points, createPose(0.51, 0.0, 0.0, 0.0, 0.0, 0.0), M_PI), 1);
+
+  // Point before start point
+  EXPECT_EQ(*findNearestIndex(traj.points, createPose(-4.0, 5.0, 0.0, 0.0, 0.0, 0.0), M_PI), 0);
+
+  // Point after end point
+  EXPECT_EQ(*findNearestIndex(traj.points, createPose(100.0, -3.0, 0.0, 0.0, 0.0, 0.0), M_PI), 9);
+
+  // Random cases
+  EXPECT_EQ(*findNearestIndex(traj.points, createPose(2.4, 1.3, 0.0, 0.0, 0.0, 0.0)), 2);
+  EXPECT_EQ(*findNearestIndex(traj.points, createPose(4.0, 0.0, 0.0, 0.0, 0.0, 0.0), M_PI), 4);
+}
+
+TEST(trajectory, findNearestSegmentIndex)
+{
+  using autoware_utils::findNearestSegmentIndex;
+
+  const auto traj = generateTestTrajectory<Trajectory>(10, 1.0);
+
+  // Empty
+  EXPECT_THROW(findNearestSegmentIndex(Trajectory{}.points, {}), std::invalid_argument);
+
+  // Start point
+  EXPECT_EQ(findNearestSegmentIndex(traj.points, createPoint(0.0, 0.0, 0.0)), 0);
+
+  // End point
+  EXPECT_EQ(findNearestSegmentIndex(traj.points, createPoint(9.0, 0.0, 0.0)), 8);
+
+  // Boundary conditions
+  EXPECT_EQ(findNearestSegmentIndex(traj.points, createPoint(1.0, 0.0, 0.0)), 0);
+  EXPECT_EQ(findNearestSegmentIndex(traj.points, createPoint(1.1, 0.0, 0.0)), 1);
+
+  // Point before start point
+  EXPECT_EQ(findNearestSegmentIndex(traj.points, createPoint(-4.0, 5.0, 0.0)), 0);
+
+  // Point after end point
+  EXPECT_EQ(findNearestSegmentIndex(traj.points, createPoint(100.0, -3.0, 0.0)), 8);
+
+  // Random cases
+  EXPECT_EQ(findNearestSegmentIndex(traj.points, createPoint(2.4, 1.0, 0.0)), 2);
+  EXPECT_EQ(findNearestSegmentIndex(traj.points, createPoint(4.0, 0.0, 0.0)), 3);
+}
+
+TEST(trajectory, calcLongitudinalOffsetToSegment_StraightTrajectory)
+{
+  using autoware_utils::calcLongitudinalOffsetToSegment;
+
+  const auto traj = generateTestTrajectory<Trajectory>(10, 1.0);
+
+  // Empty
+  EXPECT_THROW(calcLongitudinalOffsetToSegment(Trajectory{}.points, {}, {}), std::invalid_argument);
+
+  // Out of range
+  EXPECT_THROW(calcLongitudinalOffsetToSegment(traj.points, -1, {}), std::out_of_range);
+  EXPECT_THROW(
+    calcLongitudinalOffsetToSegment(traj.points, traj.points.size() - 1, {}), std::out_of_range);
+
+  // Too close points in trajectory
   {
-    geometry_msgs::Pose p;
-    p.position = autoware_utils::createPoint(0.0, 0.0, 0.0);
-    tf2::convert(autoware_utils::createQuaternionFromRPY(0.0, 0.0, 0.0), p.orientation);
-    auto closest_path_point = findClosestIndex(path, p);
-    auto closest_traj_point = findClosestIndex(traj, p);
-    EXPECT_EQ(*closest_path_point, 0);
-    EXPECT_EQ(*closest_traj_point, 0);
+    const auto invalid_traj = generateTestTrajectory<Trajectory>(10, 1e-10);
+    const auto p = createPoint(3.0, 0.0, 0.0);
+    EXPECT_THROW(calcLongitudinalOffsetToSegment(invalid_traj.points, 3, p), std::runtime_error);
   }
 
-  // Initial Pose with 90 degrees angle deviations
+  // Same point
+  EXPECT_NEAR(
+    calcLongitudinalOffsetToSegment(traj.points, 3, createPoint(3.0, 0.0, 0.0)), 0.0, epsilon);
+
+  // Point before start point
+  EXPECT_NEAR(
+    calcLongitudinalOffsetToSegment(traj.points, 6, createPoint(-3.9, 3.0, 0.0)), -9.9, epsilon);
+
+  // Point after start point
+  EXPECT_NEAR(
+    calcLongitudinalOffsetToSegment(traj.points, 7, createPoint(13.3, -10.0, 0.0)), 6.3, epsilon);
+
+  // Random cases
+  EXPECT_NEAR(
+    calcLongitudinalOffsetToSegment(traj.points, 2, createPoint(4.3, 7.0, 0.0)), 2.3, epsilon);
+  EXPECT_NEAR(
+    calcLongitudinalOffsetToSegment(traj.points, 8, createPoint(1.0, 3.0, 0.0)), -7, epsilon);
+}
+
+TEST(trajectory, calcLongitudinalOffsetToSegment_CurveTrajectory)
+{
+  using autoware_utils::calcLongitudinalOffsetToSegment;
+
+  const auto traj = generateTestTrajectory<Trajectory>(10, 1.0, 0.0, 0.0, 0.1);
+
+  // Random cases
+  EXPECT_NEAR(
+    calcLongitudinalOffsetToSegment(traj.points, 2, createPoint(2.0, 0.5, 0.0)), 0.083861449,
+    epsilon);
+}
+
+TEST(trajectory, calcSignedArcLengthFromIndexToIndex)
+{
+  using autoware_utils::calcSignedArcLength;
+
+  const auto traj = generateTestTrajectory<Trajectory>(10, 1.0);
+
+  // Empty
+  EXPECT_THROW(calcSignedArcLength(Trajectory{}.points, {}, {}), std::invalid_argument);
+
+  // Out of range
+  EXPECT_THROW(calcSignedArcLength(traj.points, -1, 1), std::out_of_range);
+  EXPECT_THROW(calcSignedArcLength(traj.points, 0, traj.points.size() + 1), std::out_of_range);
+
+  // Same point
+  EXPECT_NEAR(calcSignedArcLength(traj.points, 3, 3), 0, epsilon);
+
+  // Forward
+  EXPECT_NEAR(calcSignedArcLength(traj.points, 0, 3), 3, epsilon);
+
+  // Backward
+  EXPECT_NEAR(calcSignedArcLength(traj.points, 9, 5), -4, epsilon);
+}
+
+TEST(trajectory, calcSignedArcLengthFromPointToIndex)
+{
+  using autoware_utils::calcSignedArcLength;
+
+  const auto traj = generateTestTrajectory<Trajectory>(10, 1.0);
+
+  // Empty
+  EXPECT_THROW(calcSignedArcLength(Trajectory{}.points, {}, {}), std::invalid_argument);
+
+  // Same point
+  EXPECT_NEAR(calcSignedArcLength(traj.points, createPoint(3.0, 0.0, 0.0), 3), 0, epsilon);
+
+  // Forward
+  EXPECT_NEAR(calcSignedArcLength(traj.points, createPoint(0.0, 0.0, 0.0), 3), 3, epsilon);
+
+  // Backward
+  EXPECT_NEAR(calcSignedArcLength(traj.points, createPoint(9.0, 0.0, 0.0), 5), -4, epsilon);
+
+  // Point before start point
+  EXPECT_NEAR(calcSignedArcLength(traj.points, createPoint(-3.9, 3.0, 0.0), 6), 9.9, epsilon);
+
+  // Point after end point
+  EXPECT_NEAR(calcSignedArcLength(traj.points, createPoint(13.3, -10.0, 0.0), 7), -6.3, epsilon);
+
+  // Random cases
+  EXPECT_NEAR(calcSignedArcLength(traj.points, createPoint(1.0, 3.0, 0.0), 9), 8, epsilon);
+  EXPECT_NEAR(calcSignedArcLength(traj.points, createPoint(4.3, 7.0, 0.0), 2), -2.3, epsilon);
+}
+
+TEST(trajectory, calcSignedArcLengthFromPointToPoint)
+{
+  using autoware_utils::calcSignedArcLength;
+
+  const auto traj = generateTestTrajectory<Trajectory>(10, 1.0);
+
+  // Empty
+  EXPECT_THROW(calcSignedArcLength(Trajectory{}.points, {}, {}), std::invalid_argument);
+
+  // Same point
   {
-    geometry_msgs::Pose p;
-    p.position = autoware_utils::createPoint(0.0, 0.0, 0.0);
-    tf2::convert(autoware_utils::createQuaternionFromRPY(0.0, 0.0, M_PI / 2), p.orientation);
-    auto closest_path_point = findClosestIndex(path, p, M_PI);
-    auto closest_traj_point = findClosestIndex(traj, p, M_PI);
-    EXPECT_EQ(*closest_path_point, 0);
-    EXPECT_EQ(*closest_traj_point, 0);
+    const auto p = createPoint(3.0, 0.0, 0.0);
+    EXPECT_NEAR(calcSignedArcLength(traj.points, p, p), 0, epsilon);
   }
 
-  // Initial Pose with 180 degrees angle deviations
+  // Forward
   {
-    geometry_msgs::Pose p;
-    p.position = autoware_utils::createPoint(0.0, 0.0, 0.0);
-    tf2::convert(autoware_utils::createQuaternionFromRPY(0.0, 0.0, M_PI), p.orientation);
-    auto closest_path_point = findClosestIndex(path, p, M_PI);
-    auto closest_traj_point = findClosestIndex(traj, p, M_PI);
-    EXPECT_FALSE(closest_path_point);
-    EXPECT_FALSE(closest_traj_point);
+    const auto p1 = createPoint(0.0, 0.0, 0.0);
+    const auto p2 = createPoint(3.0, 1.0, 0.0);
+    EXPECT_NEAR(calcSignedArcLength(traj.points, p1, p2), 3, epsilon);
   }
 
-  // Initial Pose with 270 degrees angle deviations
+  // Backward
   {
-    geometry_msgs::Pose p;
-    p.position = autoware_utils::createPoint(0.0, 0.0, 0.0);
-    tf2::convert(autoware_utils::createQuaternionFromRPY(0.0, 0.0, 1.5 * M_PI), p.orientation);
-    auto closest_path_point = findClosestIndex(path, p, M_PI);
-    auto closest_traj_point = findClosestIndex(traj, p, M_PI);
-    EXPECT_EQ(*closest_path_point, 0);
-    EXPECT_EQ(*closest_traj_point, 0);
+    const auto p1 = createPoint(8.0, 0.0, 0.0);
+    const auto p2 = createPoint(9.0, 0.0, 0.0);
+    EXPECT_NEAR(calcSignedArcLength(traj.points, p1, p2), 1, epsilon);
   }
 
-  // End Point
+  // Point before start point
   {
-    geometry_msgs::Pose p;
-    p.position = autoware_utils::createPoint(10.0, 0.0, 0.0);
-    tf2::convert(autoware_utils::createQuaternionFromRPY(0.0, 0.0, 0.0), p.orientation);
-    auto closest_path_point = findClosestIndex(path, p);
-    auto closest_traj_point = findClosestIndex(traj, p);
-    EXPECT_EQ(*closest_path_point, 10);
-    EXPECT_EQ(*closest_traj_point, 10);
+    const auto p1 = createPoint(-3.9, 3.0, 0.0);
+    const auto p2 = createPoint(6.0, -10.0, 0.0);
+    EXPECT_NEAR(calcSignedArcLength(traj.points, p1, p2), 9.9, epsilon);
   }
 
-  // Middle Point
+  // Point after end point
   {
-    geometry_msgs::Pose p;
-    p.position = autoware_utils::createPoint(0.5, 0.0, 0.0);
-    tf2::convert(autoware_utils::createQuaternionFromRPY(0.0, 0.0, 0.0), p.orientation);
-    auto closest_path_point = findClosestIndex(path, p);
-    auto closest_traj_point = findClosestIndex(traj, p);
-    EXPECT_EQ(*closest_path_point, 0);
-    EXPECT_EQ(*closest_traj_point, 0);
+    const auto p1 = createPoint(7.0, -5.0, 0.0);
+    const auto p2 = createPoint(13.3, -10.0, 0.0);
+    EXPECT_NEAR(calcSignedArcLength(traj.points, p1, p2), 6.3, epsilon);
   }
 
-  // Arbitrary Point inside the path
+  // Point before start point and after end point
   {
-    geometry_msgs::Pose p;
-    p.position = autoware_utils::createPoint(4.0, 0.0, 0.0);
-    tf2::convert(autoware_utils::createQuaternionFromRPY(0.0, 0.0, 0.0), p.orientation);
-    auto closest_path_point = findClosestIndex(path, p);
-    auto closest_traj_point = findClosestIndex(traj, p);
-    EXPECT_EQ(*closest_path_point, 4);
-    EXPECT_EQ(*closest_traj_point, 4);
+    const auto p1 = createPoint(-4.3, 10.0, 0.0);
+    const auto p2 = createPoint(13.8, -1.0, 0.0);
+    EXPECT_NEAR(calcSignedArcLength(traj.points, p1, p2), 18.1, epsilon);
   }
 
-  // Point outside the path on the left
+  // Random cases
   {
-    geometry_msgs::Pose p;
-    p.position = autoware_utils::createPoint(-4.0, 5.0, 0.0);
-    tf2::convert(autoware_utils::createQuaternionFromRPY(0.0, 0.0, 0.0), p.orientation);
-    auto closest_path_point = findClosestIndex(path, p);
-    auto closest_traj_point = findClosestIndex(traj, p);
-    EXPECT_EQ(*closest_path_point, 0);
-    EXPECT_EQ(*closest_traj_point, 0);
+    const auto p1 = createPoint(1.0, 3.0, 0.0);
+    const auto p2 = createPoint(9.0, -1.0, 0.0);
+    EXPECT_NEAR(calcSignedArcLength(traj.points, p1, p2), 8, epsilon);
   }
-
-  // Point outside the path on the right
   {
-    geometry_msgs::Pose p;
-    p.position = autoware_utils::createPoint(100.0, -3.0, 0.0);
-    tf2::convert(autoware_utils::createQuaternionFromRPY(0.0, 0.0, 0.0), p.orientation);
-    auto closest_path_point = findClosestIndex(path, p);
-    auto closest_traj_point = findClosestIndex(traj, p);
-    EXPECT_EQ(*closest_path_point, 10);
-    EXPECT_EQ(*closest_traj_point, 10);
-  }
-
-  // Arbitrary Point inside the path
-  {
-    geometry_msgs::Pose p;
-    p.position = autoware_utils::createPoint(2.431, 1.391, 0.0);
-    tf2::convert(autoware_utils::createQuaternionFromRPY(0.0, 0.0, 0.0), p.orientation);
-    auto closest_path_point = findClosestIndex(path, p);
-    auto closest_traj_point = findClosestIndex(traj, p);
-    EXPECT_EQ(*closest_path_point, 2);
-    EXPECT_EQ(*closest_traj_point, 2);
-  }
-
-  // Inf Point
-  {
-    geometry_msgs::Pose p;
-    p.position = autoware_utils::createPoint(
-      std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), 0.0);
-    tf2::convert(autoware_utils::createQuaternionFromRPY(0.0, 0.0, 0.0), p.orientation);
-    auto closest_path_point = findClosestIndex(path, p);
-    auto closest_traj_point = findClosestIndex(traj, p);
-    EXPECT_FALSE(closest_path_point);
-    EXPECT_FALSE(closest_traj_point);
-  }
-
-  // Empty Point
-  {
-    geometry_msgs::Pose p;
-    p.position = autoware_utils::createPoint(0.0, 0.0, 0.0);
-    tf2::convert(autoware_utils::createQuaternionFromRPY(0.0, 0.0, 0.0), p.orientation);
-    autoware_planning_msgs::Path empty_path;
-    autoware_planning_msgs::Trajectory empty_traj;
-    auto closest_path_point = findClosestIndex(empty_path, p);
-    auto closest_traj_point = findClosestIndex(empty_traj, p);
-    EXPECT_FALSE(closest_path_point);
-    EXPECT_FALSE(closest_traj_point);
+    const auto p1 = createPoint(4.3, 7.0, 0.0);
+    const auto p2 = createPoint(2.0, 3.0, 0.0);
+    EXPECT_NEAR(calcSignedArcLength(traj.points, p1, p2), -2.3, epsilon);
   }
 }
