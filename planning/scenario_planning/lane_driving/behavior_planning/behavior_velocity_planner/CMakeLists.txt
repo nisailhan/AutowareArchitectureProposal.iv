@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   autoware_perception_msgs
   autoware_planning_msgs
   autoware_perception_msgs
+  autoware_utils
   geometry_msgs
   lanelet2_extension
   pcl_ros
@@ -32,6 +33,7 @@ catkin_package(
     autoware_perception_msgs
     autoware_planning_msgs
     autoware_perception_msgs
+    autoware_utils
     geometry_msgs
     lanelet2_extension
     pcl_ros

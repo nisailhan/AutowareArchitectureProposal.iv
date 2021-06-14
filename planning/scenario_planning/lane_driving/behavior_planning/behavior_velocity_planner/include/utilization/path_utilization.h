@@ -17,6 +17,9 @@
 
 #include <autoware_planning_msgs/Path.h>
 
+#include "autoware_utils/geometry/geometry.h"
+#include "spline_interpolation/spline_interpolation.h"
+
 autoware_planning_msgs::Path interpolatePath(
   const autoware_planning_msgs::Path & path, const double length);
 autoware_planning_msgs::Path filterLitterPathPoint(const autoware_planning_msgs::Path & path);
