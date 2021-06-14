@@ -211,82 +211,82 @@ install(DIRECTORY config/
 #############
 
 if (CATKIN_ENABLE_TESTING)
-  roslint_add_test()
-  find_package(rostest REQUIRED)
+  # roslint_add_test()
+  # find_package(rostest REQUIRED)
 
-  add_rostest_gtest(test_cpu_monitor
-    test/test_cpu_monitor.test
-    test/src/cpu_monitor/test_${CMAKE_CPU_PLATFORM}_cpu_monitor.cpp
-    ${CPU_MONITOR_SOURCE}
-  )
-  target_link_libraries(test_cpu_monitor ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${LIBRARIES})
+  # add_rostest_gtest(test_cpu_monitor
+  #   test/test_cpu_monitor.test
+  #   test/src/cpu_monitor/test_${CMAKE_CPU_PLATFORM}_cpu_monitor.cpp
+  #   ${CPU_MONITOR_SOURCE}
+  # )
+  # target_link_libraries(test_cpu_monitor ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${LIBRARIES})
 
-  add_rostest_gtest(test_hdd_monitor
-    test/test_hdd_monitor.test
-    test/src/hdd_monitor/test_hdd_monitor.cpp
-    src/hdd_monitor/hdd_monitor.cpp
-  )
-  target_link_libraries(test_hdd_monitor ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${LIBRARIES})
+  # add_rostest_gtest(test_hdd_monitor
+  #   test/test_hdd_monitor.test
+  #   test/src/hdd_monitor/test_hdd_monitor.cpp
+  #   src/hdd_monitor/hdd_monitor.cpp
+  # )
+  # target_link_libraries(test_hdd_monitor ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${LIBRARIES})
 
-  add_rostest_gtest(test_mem_monitor
-    test/test_mem_monitor.test
-    test/src/mem_monitor/test_mem_monitor.cpp
-    src/mem_monitor/mem_monitor.cpp
-  )
-  target_link_libraries(test_mem_monitor ${catkin_LIBRARIES} ${LIBRARIES})
+  # add_rostest_gtest(test_mem_monitor
+  #   test/test_mem_monitor.test
+  #   test/src/mem_monitor/test_mem_monitor.cpp
+  #   src/mem_monitor/mem_monitor.cpp
+  # )
+  # target_link_libraries(test_mem_monitor ${catkin_LIBRARIES} ${LIBRARIES})
 
-  add_rostest_gtest(test_net_monitor
-    test/test_net_monitor.test
-    test/src/net_monitor/test_net_monitor.cpp
-    src/net_monitor/net_monitor.cpp
-    src/net_monitor/nl80211.cpp
-  )
-  target_link_libraries(test_net_monitor ${catkin_LIBRARIES} ${NL_LIBS} ${LIBRARIES})
+  # add_rostest_gtest(test_net_monitor
+  #   test/test_net_monitor.test
+  #   test/src/net_monitor/test_net_monitor.cpp
+  #   src/net_monitor/net_monitor.cpp
+  #   src/net_monitor/nl80211.cpp
+  # )
+  # target_link_libraries(test_net_monitor ${catkin_LIBRARIES} ${NL_LIBS} ${LIBRARIES})
 
-  add_rostest_gtest(test_ntp_monitor
-    test/test_ntp_monitor.test
-    test/src/ntp_monitor/test_ntp_monitor.cpp
-    src/ntp_monitor/ntp_monitor.cpp
-  )
-  target_link_libraries(test_ntp_monitor ${catkin_LIBRARIES} ${LIBRARIES})
+  # add_rostest_gtest(test_ntp_monitor
+  #   test/test_ntp_monitor.test
+  #   test/src/ntp_monitor/test_ntp_monitor.cpp
+  #   src/ntp_monitor/ntp_monitor.cpp
+  # )
+  # target_link_libraries(test_ntp_monitor ${catkin_LIBRARIES} ${LIBRARIES})
 
-  add_rostest_gtest(test_process_monitor
-    test/test_process_monitor.test
-    test/src/process_monitor/test_process_monitor.cpp
-    src/process_monitor/process_monitor.cpp
-  )
-  target_link_libraries(test_process_monitor ${catkin_LIBRARIES} ${LIBRARIES})
+  # add_rostest_gtest(test_process_monitor
+  #   test/test_process_monitor.test
+  #   test/src/process_monitor/test_process_monitor.cpp
+  #   src/process_monitor/process_monitor.cpp
+  # )
+  # target_link_libraries(test_process_monitor ${catkin_LIBRARIES} ${LIBRARIES})
 
-  add_rostest_gtest(test_gpu_monitor
-    test/test_gpu_monitor.test
-    test/src/gpu_monitor/test_${CMAKE_GPU_PLATFORM}_gpu_monitor.cpp
-    ${GPU_MONITOR_SOURCE}
-  )
-  target_link_libraries(test_gpu_monitor ${catkin_LIBRARIES} ${GPU_LIBRARY} ${LIBRARIES})
+  # add_rostest_gtest(test_gpu_monitor
+  #   test/test_gpu_monitor.test
+  #   test/src/gpu_monitor/test_${CMAKE_GPU_PLATFORM}_gpu_monitor.cpp
+  #   ${GPU_MONITOR_SOURCE}
+  # )
+  # target_link_libraries(test_gpu_monitor ${catkin_LIBRARIES} ${GPU_LIBRARY} ${LIBRARIES})
 
-  # Dummy executables
-  add_executable(mpstat1 test/src/cpu_monitor/mpstat1.cpp)
-  add_executable(mpstat2 test/src/cpu_monitor/mpstat2.cpp)
-  add_executable(df1 test/src/hdd_monitor/df1.cpp)
-  add_executable(free1 test/src/mem_monitor/free1.cpp)
-  add_executable(ntpdate1 test/src/ntp_monitor/ntpdate1.cpp)
-  add_executable(top1 test/src/process_monitor/top1.cpp)
-  add_executable(top2 test/src/process_monitor/top2.cpp)
-  add_executable(top3 test/src/process_monitor/top3.cpp)
-  add_executable(echo1 test/src/process_monitor/sort1.cpp)
-  add_executable(sort1 test/src/process_monitor/sort1.cpp)
-  add_executable(sed1 test/src/process_monitor/sed1.cpp)
+  # # Dummy executables
+  # add_executable(mpstat1 test/src/cpu_monitor/mpstat1.cpp)
+  # add_executable(mpstat2 test/src/cpu_monitor/mpstat2.cpp)
+  # add_executable(df1 test/src/hdd_monitor/df1.cpp)
+  # add_executable(free1 test/src/mem_monitor/free1.cpp)
+  # add_executable(ntpdate1 test/src/ntp_monitor/ntpdate1.cpp)
+  # add_executable(top1 test/src/process_monitor/top1.cpp)
+  # add_executable(top2 test/src/process_monitor/top2.cpp)
+  # add_executable(top3 test/src/process_monitor/top3.cpp)
+  # add_executable(echo1 test/src/process_monitor/sort1.cpp)
+  # add_executable(sort1 test/src/process_monitor/sort1.cpp)
+  # add_executable(sed1 test/src/process_monitor/sed1.cpp)
 
-  install(TARGETS mpstat1 RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-  install(TARGETS mpstat2 RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-  install(TARGETS df1 RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-  install(TARGETS free1 RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-  install(TARGETS ntpdate1 RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-  install(TARGETS top1 RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-  install(TARGETS top2 RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-  install(TARGETS top3 RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-  install(TARGETS echo1 RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-  install(TARGETS sort1 RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-  install(TARGETS sed1 RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+  # install(TARGETS mpstat1 RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+  # install(TARGETS mpstat2 RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+  # install(TARGETS df1 RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+  # install(TARGETS free1 RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+  # install(TARGETS ntpdate1 RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+  # install(TARGETS top1 RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+  # install(TARGETS top2 RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+  # install(TARGETS top3 RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+  # install(TARGETS echo1 RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+  # install(TARGETS sort1 RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+  # install(TARGETS sed1 RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 endif()
