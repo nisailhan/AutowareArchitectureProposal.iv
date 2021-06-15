@@ -31,6 +31,7 @@ include_directories(
 
 add_library(autoware_utils
   src/autoware_utils.cpp
+  src/geometry/geometry.cpp
 )
 
 target_link_libraries(autoware_utils
