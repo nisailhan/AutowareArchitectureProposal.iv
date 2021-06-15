@@ -69,7 +69,7 @@ AutowareIvAdapter::AutowareIvAdapter() : nh_(), pnh_("~"), tf_listener_(tf_buffe
   sub_global_rpt_ =
     pnh_.subscribe("input/global_rpt", 1, &AutowareIvAdapter::callbackGlobalRpt, this);
   sub_lane_change_available_ = pnh_.subscribe(
-    "input/lane_change_avaiable", 1, &AutowareIvAdapter::callbackLaneChangeAvailable, this);
+    "input/lane_change_available", 1, &AutowareIvAdapter::callbackLaneChangeAvailable, this);
   sub_lane_change_ready_ =
     pnh_.subscribe("input/lane_change_ready", 1, &AutowareIvAdapter::callbackLaneChangeReady, this);
   sub_lane_change_candidate_ = pnh_.subscribe(

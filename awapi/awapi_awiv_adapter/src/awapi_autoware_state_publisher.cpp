@@ -111,7 +111,7 @@ void AutowareIvAutowareStatePublisher::getCurrentMaxVelInfo(
 {
   if (!current_max_velocity_ptr) {
     ROS_DEBUG_STREAM_THROTTLE(
-      5.0, "[AutowareIvAutowareStatePublisher] currrent_max_velocity is nullptr");
+      5.0, "[AutowareIvAutowareStatePublisher] current_max_velocity is nullptr");
     return;
   }
 

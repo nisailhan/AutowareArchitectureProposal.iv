@@ -56,6 +56,7 @@ private:
   ros::Publisher shift_cmd_pub_;
   ros::Publisher turn_signal_cmd_pub_;
   ros::Publisher gate_mode_pub_;
+  ros::Publisher autoware_engage_status_pub_;
 
   // Subscriber
   ros::Subscriber engage_sub_;

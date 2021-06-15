@@ -5,6 +5,7 @@
   <arg name="stop_reason_timeout" default="0.5" />
   <arg name="stop_reason_thresh_dist" default="100" />
 
+  <arg name="input_autoware_engage_status" default="/autoware/engage_status" />
   <arg name="input_steer" default="/vehicle/status/steering" />
   <arg name="input_vehicle_cmd" default="/control/vehicle_cmd" />
   <arg name="input_turn_signal" default="/vehicle/status/turn_signal" />
@@ -20,7 +21,7 @@
   <arg name="input_stop_reason" default="/planning/scenario_planning/status/stop_reasons" />
   <arg name="input_diagnostics" default="/diagnostics_agg" />
   <arg name="input_global_rpt" default="/pacmod/parsed_tx/global_rpt" />
-  <arg name="input_lane_change_avaiable" default="/planning/scenario_planning/lane_driving/lane_change_available" />
+  <arg name="input_lane_change_available" default="/planning/scenario_planning/lane_driving/lane_change_available" />
   <arg name="input_lane_change_ready" default="/planning/scenario_planning/lane_driving/lane_change_ready" />
   <arg name="input_lane_change_candidate_path" default="/planning/scenario_planning/lane_driving/lane_change_candidate_path" />
   <arg name="input_obstacle_avoid_ready" default="/planning/scenario_planning/lane_driving/obstacle_avoidance_ready" />
@@ -77,6 +78,7 @@
   <arg name="set_expand_stop_range" default="autoware/put/expand_stop_range" />
   <arg name="set_pose_initialization_request" default="autoware/put/pose_initialization_request" />
 
+  <arg name="get_autoware_engage_status" default="autoware/get/engage_status" />
   <arg name="get_route" default="autoware/get/route" />
   <arg name="get_predicted_object" default="prediction/get/objects" />
   <arg name="get_door_status" default="vehicle/get/door" />
@@ -101,7 +103,7 @@
       <remap from="~input/stop_reason" to="$(arg input_stop_reason)" />
       <remap from="~input/diagnostics" to="$(arg input_diagnostics)" />
       <remap from="~input/global_rpt" to="$(arg input_global_rpt)" />
-      <remap from="~input/lane_change_avaiable" to="$(arg input_lane_change_avaiable)" />
+      <remap from="~input/lane_change_available" to="$(arg input_lane_change_available)" />
       <remap from="~input/lane_change_ready" to="$(arg input_lane_change_ready)" />
       <remap from="~input/lane_change_candidate_path" to="$(arg input_lane_change_candidate_path)" />
       <remap from="~input/obstacle_avoid_ready" to="$(arg input_obstacle_avoid_ready)" />

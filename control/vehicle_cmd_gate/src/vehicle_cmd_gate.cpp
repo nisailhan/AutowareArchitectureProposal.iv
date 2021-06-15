@@ -77,6 +77,7 @@ VehicleCmdGate::VehicleCmdGate()
   turn_signal_cmd_pub_ =
     pnh_.advertise<autoware_vehicle_msgs::TurnSignal>("output/turn_signal_cmd", 1, true);
   gate_mode_pub_ = pnh_.advertise<autoware_control_msgs::GateMode>("output/gate_mode", 1, true);
+  autoware_engage_status_pub_ = pnh_.advertise<std_msgs::Bool>("output/engage_status", 1, true);
 
   // Subscriber
   engage_sub_ = pnh_.subscribe("input/engage", 1, &VehicleCmdGate::onEngage, this);
@@ -276,10 +277,15 @@ void VehicleCmdGate::onTimer(const ros::TimerEvent & event)
   fillFrameId(&shift.header.frame_id, "base_link");
   fillFrameId(&turn_signal.header.frame_id, "base_link");
 
+  // Get engage status
+  std_msgs::Bool autoware_engage;
+  autoware_engage.data = is_engaged_;
+
   // Publish topics
   gate_mode_pub_.publish(current_gate_mode_);
   turn_signal_cmd_pub_.publish(turn_signal);
   shift_cmd_pub_.publish(shift);
+  autoware_engage_status_pub_.publish(autoware_engage);
 }
 
 void VehicleCmdGate::publishControlCommands(const Commands & commands)
@@ -365,11 +371,16 @@ void VehicleCmdGate::publishEmergencyStopControlCommands()
   vehicle_cmd.shift = shift.shift;
   vehicle_cmd.emergency = true;
 
+  // Engage status
+  std_msgs::Bool autoware_engage;
+  autoware_engage.data = is_engaged_;
+
   vehicle_cmd_pub_.publish(vehicle_cmd);
   control_cmd_pub_.publish(control_cmd);
   gate_mode_pub_.publish(current_gate_mode_);
   turn_signal_cmd_pub_.publish(turn_signal);
   shift_cmd_pub_.publish(shift);
+  autoware_engage_status_pub_.publish(autoware_engage);
 }
 
 autoware_control_msgs::ControlCommand VehicleCmdGate::filterControlCommand(
