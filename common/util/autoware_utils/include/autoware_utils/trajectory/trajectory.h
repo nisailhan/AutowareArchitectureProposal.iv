@@ -93,34 +93,6 @@ boost::optional<size_t> findNearestIndex(
 }
 
 /**
-  * @brief find nearest segment index to point
-  *        segment is straight path between two continuous points of trajectory
-  * @param points points of trajectory
-  * @param point point to which to find nearest segment index
-  * @return nearest index
-  */
-template <class T>
-size_t findNearestSegmentIndex(const T & points, const geometry_msgs::Point & point)
-{
-  const size_t nearest_idx = findNearestIndex(points, point);
-
-  if (nearest_idx == 0) {
-    return 0;
-  } else if (nearest_idx == points.size() - 1) {
-    return points.size() - 2;
-  }
-
-  const double prev_dist = calcDistance2d(point, points.at(nearest_idx - 1));
-  const double next_dist = calcDistance2d(point, points.at(nearest_idx + 1));
-
-  if (prev_dist <= next_dist) {
-    return nearest_idx - 1;
-  }
-
-  return nearest_idx;
-}
-
-/**
   * @brief calculate length along trajectory from seg_idx point to nearest point to p_target on trajectory
   *        If seg_idx point is after that nearest point, length is negative
   * @param points points of trajectory, path, ...
@@ -146,6 +118,34 @@ double calcLongitudinalOffsetToSegment(
   }
 
   return segment_vec.dot(target_vec) / segment_vec.norm();
+}
+
+/**
+  * @brief find nearest segment index to point
+  *        segment is straight path between two continuous points of trajectory
+  *        When point is on a trajectory point whose index is nearest_idx, return nearest_idx - 1
+  * @param points points of trajectory
+  * @param point point to which to find nearest segment index
+  * @return nearest index
+  */
+template <class T>
+size_t findNearestSegmentIndex(const T & points, const geometry_msgs::Point & point)
+{
+  const size_t nearest_idx = findNearestIndex(points, point);
+
+  if (nearest_idx == 0) {
+    return 0;
+  } else if (nearest_idx == points.size() - 1) {
+    return points.size() - 2;
+  }
+
+  const double signed_length = calcLongitudinalOffsetToSegment(points, nearest_idx, point);
+
+  if (signed_length <= 0) {
+    return nearest_idx - 1;
+  }
+
+  return nearest_idx;
 }
 
 /**

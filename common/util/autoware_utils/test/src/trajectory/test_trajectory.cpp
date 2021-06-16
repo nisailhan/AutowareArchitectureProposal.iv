@@ -38,13 +38,6 @@ geometry_msgs::Pose createPose(double x, double y, double z, double roll, double
   return p;
 }
 
-geometry_msgs::Point transformGeometryPoint(
-  const geometry_msgs::Point & point, const geometry_msgs::Transform & transform)
-{
-  const auto transformed = transformPoint(autoware_utils::fromMsg(point), transform);
-  return autoware_utils::toMsg(transformed);
-}
-
 template <class T>
 T generateTestTrajectory(
   const size_t num_points, const double point_interval, const double vel = 0.0,
@@ -259,6 +252,14 @@ TEST(trajectory, findNearestSegmentIndex)
   // Random cases
   EXPECT_EQ(findNearestSegmentIndex(traj.points, createPoint(2.4, 1.0, 0.0)), 2);
   EXPECT_EQ(findNearestSegmentIndex(traj.points, createPoint(4.0, 0.0, 0.0)), 3);
+
+  // Two nearest trajectory points are not the edges of the nearest segment.
+  std::vector<geometry_msgs::Point> sparse_points{
+    createPoint(0.0, 0.0, 0.0),
+    createPoint(10.0, 0.0, 0.0),
+    createPoint(11.0, 0.0, 0.0),
+  };
+  EXPECT_EQ(findNearestSegmentIndex(sparse_points, createPoint(9.0, 1.0, 0.0)), 0);
 }
 
 TEST(trajectory, calcLongitudinalOffsetToSegment_StraightTrajectory)
