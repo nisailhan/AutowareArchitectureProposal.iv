@@ -37,7 +37,7 @@
  *********************************************************************/
 
 /*
- * Copyright 2020 Tier IV, Inc. All rights reserved.
+ * Copyright 2021 Tier IV, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,46 @@ void OccupancyGridMap::raytrace2D(
   // freespace
   raytraceFreespace(pointcloud, robot_pose);
 
+  // occupied
+  MarkCell marker(costmap_, occupancy_cost_value::LETHAL_OBSTACLE);
+  for (sensor_msgs::PointCloud2ConstIterator<float> iter_x(pointcloud, "x"),
+       iter_y(pointcloud, "y");
+       iter_x != iter_x.end(); ++iter_x, ++iter_y) {
+    unsigned int mx, my;
+    if (!worldToMap(*iter_x, *iter_y, mx, my)) {
+      ROS_DEBUG("Computing map coords failed");
+      continue;
+    }
+    const unsigned int index = getIndex(mx, my);
+    marker(index);
+  }
+}
+
+void OccupancyGridMap::updateFreespaceCells(
+  const sensor_msgs::PointCloud2 & pointcloud, const geometry_msgs::Pose & robot_pose)
+{
+  updateOrigin(
+    robot_pose.position.x - getSizeInMetersX() / 2, robot_pose.position.y - getSizeInMetersY() / 2);
+  // occupied
+  MarkCell marker(costmap_, occupancy_cost_value::FREE_SPACE);
+  for (sensor_msgs::PointCloud2ConstIterator<float> iter_x(pointcloud, "x"),
+       iter_y(pointcloud, "y");
+       iter_x != iter_x.end(); ++iter_x, ++iter_y) {
+    unsigned int mx, my;
+    if (!worldToMap(*iter_x, *iter_y, mx, my)) {
+      ROS_DEBUG("Computing map coords failed");
+      continue;
+    }
+    const unsigned int index = getIndex(mx, my);
+    marker(index);
+  }
+}
+
+void OccupancyGridMap::updateOccupiedCells(
+  const sensor_msgs::PointCloud2 & pointcloud, const geometry_msgs::Pose & robot_pose)
+{
+  updateOrigin(
+    robot_pose.position.x - getSizeInMetersX() / 2, robot_pose.position.y - getSizeInMetersY() / 2);
   // occupied
   MarkCell marker(costmap_, occupancy_cost_value::LETHAL_OBSTACLE);
   for (sensor_msgs::PointCloud2ConstIterator<float> iter_x(pointcloud, "x"),

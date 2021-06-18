@@ -3,6 +3,7 @@ project(laserscan_to_occupancy_grid_map)
 
 find_package(catkin REQUIRED COMPONENTS
   nodelet
+  autoware_utils
   roscpp
   sensor_msgs
   laser_geometry
@@ -14,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_geometry_msgs
   visualization_msgs
   costmap_2d
+  message_filters
 )
 
 find_package(Eigen3 REQUIRED)
@@ -21,8 +23,7 @@ find_package(Eigen3 REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES laserscan_to_occupancy_grid_map
-  CATKIN_DEPENDS roscpp nodelet sensor_msgs laser_geometry nav_msgs pcl_ros tf2 tf2_ros tf2_sensor_msgs tf2_geometry_msgs visualization_msgs costmap_2d
-
+  CATKIN_DEPENDS roscpp nodelet autoware_utils sensor_msgs laser_geometry nav_msgs pcl_ros tf2 tf2_ros tf2_sensor_msgs tf2_geometry_msgs visualization_msgs costmap_2d message_filters
 )
 
 include_directories(
@@ -60,7 +61,4 @@ install(
 )
 
 if(CATKIN_ENABLE_TESTING)
-  find_package(roslint REQUIRED)
-  roslint_cpp()
-  roslint_add_test()
 endif()

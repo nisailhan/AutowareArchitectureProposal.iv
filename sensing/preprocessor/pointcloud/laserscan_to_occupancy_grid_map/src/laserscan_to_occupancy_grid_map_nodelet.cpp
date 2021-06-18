@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Tier IV, Inc. All rights reserved.
+ * Copyright 2021 Tier IV, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,78 @@
 #include <pcl_ros/point_cloud.h>
 #include <pcl_ros/transforms.h>
 #include <tf2_eigen/tf2_eigen.h>
+
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 
+#include <autoware_utils/autoware_utils.h>
 #include <costmap_2d/costmap_2d_ros.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <pluginlib/class_list_macros.h>
+
+namespace
+{
+bool transformPointcloud(
+  const sensor_msgs::PointCloud2 & input, const tf2_ros::Buffer & tf2,
+  const std::string & target_frame, sensor_msgs::PointCloud2 & output)
+{
+  geometry_msgs::TransformStamped tf_stamped;
+  tf_stamped = tf2.lookupTransform(
+    target_frame, input.header.frame_id, input.header.stamp, ros::Duration(0.5));
+  // transform pointcloud
+  Eigen::Matrix4f tf_matrix = tf2::transformToEigen(tf_stamped.transform).matrix().cast<float>();
+  pcl_ros::transformPointCloud(tf_matrix, input, output);
+  output.header.stamp =input.header.stamp;
+  output.header.frame_id = target_frame;
+  return true;
+}
+
+void cropPointcloudByHeight(
+  const sensor_msgs::PointCloud2 & input, const tf2_ros::Buffer & tf2,
+  const std::string & target_frame, const float min_height, const float max_height,
+  sensor_msgs::PointCloud2 & output)
+{
+  // Transformed pointcloud on target frame
+  sensor_msgs::PointCloud2 trans_input_tmp;
+  const bool is_target_frame = (input.header.frame_id == target_frame);
+  if (!is_target_frame) {
+    geometry_msgs::TransformStamped tf_stamped;
+    tf_stamped = tf2.lookupTransform(
+      target_frame, input.header.frame_id, input.header.stamp, ros::Duration(0.5));
+    // transform pointcloud
+    Eigen::Matrix4f tf_matrix = tf2::transformToEigen(tf_stamped.transform).matrix().cast<float>();
+    pcl_ros::transformPointCloud(tf_matrix, input, trans_input_tmp);
+  }
+  const sensor_msgs::PointCloud2 & trans_input = is_target_frame ? input : trans_input_tmp;
+
+  // Apply height filter
+  pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_output(new pcl::PointCloud<pcl::PointXYZ>);
+  for (sensor_msgs::PointCloud2ConstIterator<float> iter_x(trans_input, "x"),
+       iter_y(trans_input, "y"), iter_z(trans_input, "z");
+       iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
+    if (min_height < *iter_z && *iter_z < max_height) {
+      pcl_output->push_back(pcl::PointXYZ(*iter_x, *iter_y, *iter_z));
+    }
+  }
+
+  // Convert to ros msg
+  pcl::toROSMsg(*pcl_output, output);
+  output.header = input.header;
+
+  return;
+}
+
+geometry_msgs::Pose getPose(
+  const std_msgs::Header & source_header, const tf2_ros::Buffer & tf2,
+  const std::string & target_frame)
+{
+  geometry_msgs::Pose pose;
+  geometry_msgs::TransformStamped tf_stamped;
+  tf_stamped = tf2.lookupTransform(
+    target_frame, source_header.frame_id, source_header.stamp, ros::Duration(0.5));
+  pose = autoware_utils::transform2pose(tf_stamped.transform);
+  return pose;
+}
+}  // namespace
 
 namespace occupancy_grid_map
 {
@@ -37,92 +104,127 @@ void OccupancyGridMapNodelet::onInit()
   nh_ = getNodeHandle();
   private_nh_ = getPrivateNodeHandle();
 
+  /* params */
+  bool input_obstacle_pointcloud, input_obstacle_and_raw_pointcloud;
+  double map_length, map_resolution;
   private_nh_.param<std::string>("map_frame", map_frame_, "map");
+  private_nh_.param<std::string>("base_link_frame", base_link_frame_, "base_link");
+  private_nh_.param<double>("map_length", map_length, 100.0);
+  private_nh_.param<double>("map_resolution", map_resolution, 0.5);
+  private_nh_.param<bool>("input_obstacle_pointcloud", input_obstacle_pointcloud, true);
+  private_nh_.param<bool>("input_obstacle_and_raw_pointcloud", input_obstacle_and_raw_pointcloud, true);
+  private_nh_.param<bool>("use_height_filter", use_height_filter_, true);
+
+  /* tf */
   tf2_.reset(new tf2_ros::Buffer());
   tf2_listener_.reset(new tf2_ros::TransformListener(*tf2_));
-  bool input_pointcloud;
-  private_nh_.param<bool>("input_pointcloud", input_pointcloud, false);
-  if (input_pointcloud)
-    pointcloud_sub_ = private_nh_.subscribe(
-      "input/pointcloud", 1, &OccupancyGridMapNodelet::onPointCloud2Callback, this);
-  else
-    laserscan_sub_ =
-      private_nh_.subscribe("input/scan", 1, &OccupancyGridMapNodelet::onLaserscanCallback, this);
 
+  /* Subscriber and publisher */
+  laserscan_sub_.subscribe(private_nh_, "input/laserscan", 1);
+  obstacle_pointcloud_sub_.subscribe(private_nh_, "input/obstacle_pointcloud", 1);
+  raw_pointcloud_sub_.subscribe(private_nh_, "input/raw_pointcloud", 1);
+  // add dummy callback to enable passthrough filter
+  laserscan_sub_.registerCallback(
+    std::bind(&OccupancyGridMapNodelet::onDummyPointCloud2, this, std::placeholders::_1));
+  if (input_obstacle_and_raw_pointcloud)
+    sync_ptr_ = std::make_shared<Sync>(
+      SyncPolicy(5), laserscan_sub_, obstacle_pointcloud_sub_, raw_pointcloud_sub_);
+  else if (input_obstacle_pointcloud)
+    sync_ptr_ =
+      std::make_shared<Sync>(SyncPolicy(3), laserscan_sub_, obstacle_pointcloud_sub_, passthrough_);
+  else
+    sync_ptr_ = std::make_shared<Sync>(SyncPolicy(3), laserscan_sub_, passthrough_, passthrough_);
+
+  sync_ptr_->registerCallback(std::bind(
+    &OccupancyGridMapNodelet::onLaserscanPointCloud2WithObstacleAndRaw, this, std::placeholders::_1,
+    std::placeholders::_2, std::placeholders::_3));
   occupancy_grid_map_pub_ =
     private_nh_.advertise<nav_msgs::OccupancyGrid>("output/occupancy_grid_map", 1);
 
-  double map_length, map_resolution;
-  private_nh_.param<double>("map_length", map_length, 100.0);
-  private_nh_.param<double>("map_resolution", map_resolution, 0.5);
+  /* Occupancy grid */
   occupancy_grid_map_updater_ptr_ = std::make_shared<costmap_2d::OccupancyGridMapBBFUpdater>(
     map_length / map_resolution, map_length / map_resolution, map_resolution);
 }
 
-void OccupancyGridMapNodelet::onLaserscanCallback(
-  const sensor_msgs::LaserScan::ConstPtr & input_msg)
+sensor_msgs::PointCloud2::Ptr OccupancyGridMapNodelet::convertLaserscanToPointCLoud2(
+  const sensor_msgs::LaserScan::ConstPtr & input)
 {
   // check over max range point
   const float max_range =
     static_cast<float>(occupancy_grid_map_updater_ptr_->getSizeInCellsX()) * 0.5f +
     occupancy_grid_map_updater_ptr_->getResolution();
   constexpr float epsilon = 0.001;
-  sensor_msgs::LaserScan laserscan = *input_msg;
+  sensor_msgs::LaserScan laserscan = *input;
   laserscan.range_max = max_range;
-  for (size_t i = 0; i < laserscan.ranges.size(); i++) {
-    float range = laserscan.ranges[i];
+  for (auto & range : laserscan.ranges) {
     if (max_range < range || std::isinf(range)) {
-      laserscan.ranges[i] = max_range - epsilon;
+      range = max_range - epsilon;
     }
   }
 
   // convert to pointcloud
-  boost::shared_ptr<sensor_msgs::PointCloud2> pointcloud_ptr =
-    boost::make_shared<sensor_msgs::PointCloud2>();
+  sensor_msgs::PointCloud2::Ptr pointcloud_ptr = boost::make_shared<sensor_msgs::PointCloud2>();
   pointcloud_ptr->header = laserscan.header;
   laserscan2pointcloud_converter_.transformLaserScanToPointCloud(
     laserscan.header.frame_id, laserscan, *pointcloud_ptr, *tf2_);
 
-  // call pointcloud callback
-  onPointCloud2Callback(pointcloud_ptr);
+  return pointcloud_ptr;
 }
 
-void OccupancyGridMapNodelet::onPointCloud2Callback(
-  const sensor_msgs::PointCloud2::ConstPtr & input_msg)
+void OccupancyGridMapNodelet::onLaserscanPointCloud2WithObstacleAndRaw(
+  const sensor_msgs::LaserScan::ConstPtr & input_laserscan_msg,
+  const sensor_msgs::PointCloud2::ConstPtr & input_obstacle_msg,
+  const sensor_msgs::PointCloud2::ConstPtr & input_raw_msg)
 {
-  sensor_msgs::PointCloud2 transformed_pointcloud;
+  // Laserscan to pointcloud2
+  sensor_msgs::PointCloud2::ConstPtr laserscan_pc_ptr =
+    convertLaserscanToPointCLoud2(input_laserscan_msg);
+
+  // Apply height filter
+  sensor_msgs::PointCloud2 cropped_obstacle_pc, cropped_raw_pc;
+  if (use_height_filter_) {
+    constexpr float min_height = -1.0, max_height = 2.0;
+    cropPointcloudByHeight(
+      *input_obstacle_msg, *tf2_, base_link_frame_, min_height, max_height, cropped_obstacle_pc);
+    cropPointcloudByHeight(
+      *input_raw_msg, *tf2_, base_link_frame_, min_height, max_height, cropped_raw_pc);
+  }
+  const sensor_msgs::PointCloud2 & filtered_obstacle_pc =
+    use_height_filter_ ? cropped_obstacle_pc : *input_obstacle_msg;
+  const sensor_msgs::PointCloud2 & filtered_raw_pc =
+    use_height_filter_ ? cropped_raw_pc : *input_raw_msg;
+
+  // Transform pointcloud and get frame pose
+  sensor_msgs::PointCloud2 trans_laserscan_pc, trans_obstacle_pc, trans_raw_pc;
   geometry_msgs::Pose pose;
   try {
-    geometry_msgs::TransformStamped transform_stamped;
-    transform_stamped = tf2_->lookupTransform(
-      map_frame_, input_msg->header.frame_id, input_msg->header.stamp, ros::Duration(0.1));
-    // transform pointcloud
-    Eigen::Matrix4f transform_matrix =
-      tf2::transformToEigen(transform_stamped.transform).matrix().cast<float>();
-    pcl_ros::transformPointCloud(transform_matrix, *input_msg, transformed_pointcloud);
-    // pose
-    pose.position.x = transform_stamped.transform.translation.x;
-    pose.position.y = transform_stamped.transform.translation.y;
-    pose.position.z = transform_stamped.transform.translation.z;
-    pose.orientation = transform_stamped.transform.rotation;
+    transformPointcloud(*laserscan_pc_ptr, *tf2_, map_frame_, trans_laserscan_pc);
+    transformPointcloud(filtered_obstacle_pc, *tf2_, map_frame_, trans_obstacle_pc);
+    transformPointcloud(filtered_raw_pc, *tf2_, map_frame_, trans_raw_pc);
+    pose = getPose(laserscan_pc_ptr->header, *tf2_, map_frame_);
   } catch (tf2::TransformException & ex) {
     ROS_WARN("%s", ex.what());
     return;
   }
 
+  // Create oneshot occupancy grid map
   costmap_2d::OccupancyGridMap oneshot_occupancy_grid_map(
     occupancy_grid_map_updater_ptr_->getSizeInCellsX(),
     occupancy_grid_map_updater_ptr_->getSizeInCellsY(),
     occupancy_grid_map_updater_ptr_->getResolution());
+  oneshot_occupancy_grid_map.updateFreespaceCells(trans_raw_pc, pose);
+  oneshot_occupancy_grid_map.raytrace2D(trans_laserscan_pc, pose);
+  oneshot_occupancy_grid_map.updateOccupiedCells(trans_obstacle_pc, pose);
 
-  oneshot_occupancy_grid_map.raytrace2D(transformed_pointcloud, pose);
+  // Update with bayes filter
   occupancy_grid_map_updater_ptr_->update(oneshot_occupancy_grid_map, pose);
 
-  occupancy_grid_map_pub_.publish(OccupancyGridMaptoMsgPtr(
-    map_frame_, input_msg->header.stamp, pose.position.z, *occupancy_grid_map_updater_ptr_));
+  // publish
+  occupancy_grid_map_pub_.publish(OccupancyGridMapToMsgPtr(
+    map_frame_, laserscan_pc_ptr->header.stamp, pose.position.z, *occupancy_grid_map_updater_ptr_));
 }
 
-boost::shared_ptr<nav_msgs::OccupancyGrid> OccupancyGridMapNodelet::OccupancyGridMaptoMsgPtr(
+boost::shared_ptr<nav_msgs::OccupancyGrid> OccupancyGridMapNodelet::OccupancyGridMapToMsgPtr(
   const std::string & frame_id, const ros::Time & time, const float & robot_pose_z,
   const costmap_2d::Costmap2D & occupancy_grid_map)
 {

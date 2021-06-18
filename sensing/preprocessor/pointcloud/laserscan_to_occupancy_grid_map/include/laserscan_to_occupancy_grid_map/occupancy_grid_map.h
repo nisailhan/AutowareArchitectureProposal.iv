@@ -37,7 +37,7 @@
  *********************************************************************/
 
 /*
- * Copyright 2020 Tier IV, Inc. All rights reserved.
+ * Copyright 2021 Tier IV, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,12 @@ public:
   ~OccupancyGridMap() = default;
 
   void raytrace2D(
+    const sensor_msgs::PointCloud2 & pointcloud, const geometry_msgs::Pose & robot_pose);
+
+  void updateFreespaceCells(
+    const sensor_msgs::PointCloud2 & pointcloud, const geometry_msgs::Pose & robot_pose);
+
+  void updateOccupiedCells(
     const sensor_msgs::PointCloud2 & pointcloud, const geometry_msgs::Pose & robot_pose);
 
 private:
