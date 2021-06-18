@@ -160,8 +160,8 @@ double calcJudgeLineDistWithAccLimit(
 }
 
 double calcJudgeLineDistWithJerkLimit(
-  const double velocity, const double acceleration, const double max_stop_jerk,
-  const double max_stop_acceleration, const double delay_response_time)
+  const double velocity, const double acceleration, const double max_stop_acceleration,
+  const double max_stop_jerk, const double delay_response_time)
 {
   if (velocity <= 0.0) return 0.0;
 
