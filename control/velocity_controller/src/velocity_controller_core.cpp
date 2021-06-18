@@ -27,7 +27,7 @@ VelocityController::VelocityController()
   control_state_(ControlState::STOPPED),
   prev_acc_cmd_(0.0),
   prev_vel_cmd_(0.0),
-  last_running_time_(nullptr)
+  last_running_time_(std::make_shared<ros::Time>(ros::Time::now()))
 {
   // vehicle parameter
   wheel_base_ = waitForParam<double>(pnh_, "/vehicle_info/wheel_base");
@@ -47,10 +47,10 @@ VelocityController::VelocityController()
   {
     auto & p = state_transition_params_;
     // drive
-    pnh_.param("drive_state_stop_dist", p.drive_state_stop_dist, 0.5);  // [m/s]
-    pnh_.param("drive_state_offset_stop_dist", p.drive_state_offset_stop_dist, 1.0);              // [m]
+    pnh_.param("drive_state_stop_dist", p.drive_state_stop_dist, 0.5);                // [m]
+    pnh_.param("drive_state_offset_stop_dist", p.drive_state_offset_stop_dist, 1.0);  // [m]
     // stopping
-    pnh_.param("stopping_state_stop_dist", p.stopping_state_stop_dist, 3.0);  // [m/s^2]
+    pnh_.param("stopping_state_stop_dist", p.stopping_state_stop_dist, 3.0);  // [m]
     // stop
     pnh_.param("stopped_state_entry_vel", p.stopped_state_entry_vel, 0.2);  // [m/s]
     pnh_.param("stopped_state_entry_acc", p.stopped_state_entry_acc, 0.2);  // [m/ss]
@@ -94,8 +94,8 @@ VelocityController::VelocityController()
 
   // parameters for smooth stop state
   {
-    double stop_dist, weak_brake_time, weak_brake_acc, increasing_brake_time, increasing_brake_gradient,
-      stop_brake_time, stop_brake_acc;
+    double stop_dist, weak_brake_time, weak_brake_acc, increasing_brake_time,
+      increasing_brake_gradient, stop_brake_time, stop_brake_acc;
     pnh_.param("smooth_stop_weak_brake_time", weak_brake_time, 3.0);              // [sec]
     pnh_.param("smooth_stop_weak_brake_acc", weak_brake_acc, -0.4);               // [m/s^2]
     pnh_.param("smooth_stop_increasing_brake_time", increasing_brake_time, 3.0);  // [sec]
@@ -117,7 +117,7 @@ VelocityController::VelocityController()
 
   // parameters for emergency state
   {
-    pnh_.param("emergency_vel", emergency_vel_, 0.0);    // [m/s]
+    pnh_.param("emergency_vel", emergency_vel_, 0.0);     // [m/s]
     pnh_.param("emergency_acc", emergency_acc_, -2.0);    // [m/s^2]
     pnh_.param("emergency_jerk", emergency_jerk_, -1.5);  // [m/s^3]
   }
@@ -255,8 +255,8 @@ void VelocityController::callbackTimerControl(const ros::TimerEvent & event)
   // calculate closest index of trajectory
   const auto & p = state_transition_params_;
   boost::optional<int> closest_idx = vcutils::calcClosestWithThr(
-    *trajectory_ptr_, current_pose, p.emergency_state_traj_trans_dev,
-    p.emergency_state_traj_rot_dev);
+    *trajectory_ptr_, current_pose, p.emergency_state_traj_rot_dev,
+    p.emergency_state_traj_trans_dev);
   boost::optional<double> stop_dist =
     closest_idx ? vcutils::calcStopDistance(current_pose, *trajectory_ptr_) : boost::none;
 
@@ -282,8 +282,8 @@ void VelocityController::updateControlState(
   const auto & p = state_transition_params_;
 
   // flags for state transition
-  bool departure_condition_from_stopping = stop_dist ? \
-    *stop_dist > p.drive_state_stop_dist + p.drive_state_offset_stop_dist : false;
+  bool departure_condition_from_stopping =
+    stop_dist ? *stop_dist > p.drive_state_stop_dist + p.drive_state_offset_stop_dist : false;
   bool departure_condition_from_stopped = stop_dist ? *stop_dist > p.drive_state_stop_dist : false;
   bool stopping_condition = stop_dist ? *stop_dist < p.stopping_state_stop_dist : false;
   if (
@@ -295,7 +295,7 @@ void VelocityController::updateControlState(
     last_running_time_ ? (ros::Time::now() - *last_running_time_).toSec() > 0.5 : false;
   bool emergency_condition =
     !closest_idx || (enable_overshoot_emergency_ &&
-                          (!stop_dist || *stop_dist < -p.emergency_state_overshoot_stop_dist));
+                     (!stop_dist || *stop_dist < -p.emergency_state_overshoot_stop_dist));
 
   // transit state
   if (control_state_ == ControlState::DRIVE) {
@@ -305,7 +305,7 @@ void VelocityController::updateControlState(
         control_state_ = ControlState::STOPPING;
       }
     } else {
-      if (stopped_condition) {
+      if (stopped_condition && !departure_condition_from_stopped) {
         control_state_ = ControlState::STOPPED;
       }
     }
@@ -332,6 +332,10 @@ void VelocityController::updateControlState(
       control_state_ = ControlState::DRIVE;
       pid_vel_.reset();
       lpf_vel_error_.reset();
+    }
+
+    if (emergency_condition) {
+      control_state_ = ControlState::EMERGENCY;
     }
   } else if (control_state_ == ControlState::EMERGENCY) {
     if (stopped_condition && !emergency_condition) {
@@ -388,7 +392,7 @@ VelocityController::CtrlCmd VelocityController::calcCtrlCmd(
     vel_cmd = applyRateFilter(emergency_vel_, prev_vel_cmd_, dt, emergency_acc_);
     acc_cmd = applyRateFilter(emergency_acc_, prev_acc_cmd_, dt, emergency_jerk_);
 
-    ROS_ERROR("[Emergency stop] vel: %3.3f, acc: %3.3f", vel_cmd, acc_cmd);
+    ROS_ERROR_THROTTLE(2.0, "[Emergency stop] vel: %3.3f, acc: %3.3f", vel_cmd, acc_cmd);
   }
 
   // shift

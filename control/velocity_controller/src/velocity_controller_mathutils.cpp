@@ -144,11 +144,9 @@ void searchClosestTwoPoints(
   if (closest_idx == 0) {
     min_idx = 0;
     max_idx = 1;
-    return;
   } else if (closest_idx == static_cast<int>(traj.points.size() - 1)) {
     min_idx = static_cast<int>(traj.points.size() - 2);
     max_idx = static_cast<int>(traj.points.size() - 1);
-    return;
   } else {
     double prev_dist = autoware_utils::calcDistance2d(pose, traj.points.at(closest_idx - 1).pose);
     double next_dist = autoware_utils::calcDistance2d(pose, traj.points.at(closest_idx + 1).pose);
@@ -160,11 +158,12 @@ void searchClosestTwoPoints(
       min_idx = closest_idx;
       max_idx = closest_idx + 1;
     }
-    std::pair<double, double> lengths = calcTwoPointsInterpolatedLength(
-      pose, traj.points.at(min_idx).pose, traj.points.at(max_idx).pose);
-    min_idx_length = lengths.first;
-    max_idx_length = lengths.second;
   }
+
+  std::pair<double, double> lengths = calcTwoPointsInterpolatedLength(
+    pose, traj.points.at(min_idx).pose, traj.points.at(max_idx).pose);
+  min_idx_length = lengths.first;
+  max_idx_length = lengths.second;
 }
 
 void searchClosestTwoPoints(
@@ -179,23 +178,22 @@ boost::optional<double> calcTrajectoryLengthFromPose(
   const geometry_msgs::Pose & pose, const autoware_planning_msgs::Trajectory & traj,
   unsigned int target_idx)
 {
-  int closest_idx = calcClosestWaypoint(traj, pose);  // TODO経路からある程度の距離以内
+  int closest_idx = calcClosestWaypoint(traj, pose);
   if (closest_idx < 0) {
     return {};
   }
 
-  const bool before_target_idx = !judgePoseOverPoint(pose, traj, target_idx);
   const bool before_traj = !judgePoseOverPoint(pose, traj, 0);
   const bool after_traj = judgePoseOverPoint(pose, traj, traj.points.size() - 1);
 
   int pose_round_idx;
   double length_to_round_waypoint;
-  if (before_traj) {
+  if (before_traj && closest_idx == 0) {
     pose_round_idx = 0;
     length_to_round_waypoint =
       -calcTwoPointsInterpolatedLength(pose, traj.points.at(0).pose, traj.points.at(1).pose).first;
-  } else if (after_traj) {
-    pose_round_idx = traj.points.size() - 1;
+  } else if (after_traj && closest_idx == static_cast<int>(traj.points.size()) - 1) {
+    pose_round_idx = static_cast<int>(traj.points.size()) - 1;
     length_to_round_waypoint = -calcTwoPointsInterpolatedLength(
                                   pose, traj.points.at(traj.points.size() - 1).pose,
                                   traj.points.at(traj.points.size() - 2).pose)
@@ -212,6 +210,13 @@ boost::optional<double> calcTrajectoryLengthFromPose(
       pose_round_idx = min_idx;
       length_to_round_waypoint = min_idx_length;
     }
+  }
+
+  bool before_target_idx;
+  if (target_idx == pose_round_idx) {
+    before_target_idx = !judgePoseOverPoint(pose, traj, target_idx);
+  } else {
+    before_target_idx = (target_idx > pose_round_idx);
   }
 
   boost::optional<double> length_on_waypoints =
