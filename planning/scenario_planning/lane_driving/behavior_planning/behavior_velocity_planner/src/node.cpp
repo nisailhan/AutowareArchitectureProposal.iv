@@ -166,6 +166,7 @@ BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode()
   pnh_.param(
     "lowpass_gain", planner_data_.accel_lowpass_gain_,
     0.5);
+  pnh_.param("stop_line_extend_length", planner_data_.stop_line_extend_length, 5.0);
 
   // Initialize PlannerManager
   if (getParam<bool>(pnh_, "launch_stop_line", true))

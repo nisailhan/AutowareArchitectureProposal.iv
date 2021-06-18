@@ -33,9 +33,9 @@
 #include <autoware_api_msgs/IntersectionStatus.h>
 #include <autoware_lanelet2_msgs/MapBin.h>
 #include <autoware_perception_msgs/DynamicObjectArray.h>
+#include <autoware_perception_msgs/LookingTrafficLightState.h>
 #include <autoware_perception_msgs/TrafficLightStateArray.h>
 #include <autoware_perception_msgs/TrafficLightStateStamped.h>
-#include <autoware_perception_msgs/LookingTrafficLightState.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <sensor_msgs/PointCloud2.h>
@@ -84,6 +84,7 @@ struct PlannerData
   double max_stop_acceleration_threshold;
   double max_stop_jerk_threshold;
   double delay_response_time;
+  double stop_line_extend_length;
 
   bool isVehicleStopped(const double stop_duration = 0.0) const
   {

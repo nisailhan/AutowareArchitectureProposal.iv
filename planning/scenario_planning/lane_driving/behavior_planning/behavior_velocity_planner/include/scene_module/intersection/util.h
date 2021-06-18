@@ -90,8 +90,8 @@ int getFirstPointInsidePolygons(
    * @param stop_pose stop point defined on map
    * @return true when the stop point is defined on map.
    */
-bool getStopPoseFromMap(
-  const int lane_id, geometry_msgs::Point * stop_pose,
-  const std::shared_ptr<const PlannerData> & planner_data);
+bool getStopPoseIndexFromMap(
+  const autoware_planning_msgs::PathWithLaneId & path, const int lane_id,
+  const std::shared_ptr<const PlannerData> & planner_data, int & stop_idx_ip, int dist_thr);
 
 }  // namespace util

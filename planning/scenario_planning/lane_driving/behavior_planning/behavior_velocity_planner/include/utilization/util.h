@@ -34,6 +34,12 @@
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <vector>
 
+#include <lanelet2_core/LaneletMap.h>
+#include <lanelet2_extension/utility/query.h>
+#include <lanelet2_routing/RoutingGraph.h>
+
+#include <utilization/boost_geometry_helper.h>
+
 using Point2d = boost::geometry::model::d2::point_xy<double>;
 namespace planning_utils
 {
@@ -117,6 +123,10 @@ std::vector<geometry_msgs::Point> toRosPoints(
 
 geometry_msgs::Point toRosPoint(const pcl::PointXYZ & pcl_point);
 geometry_msgs::Point toRosPoint(const Point2d & boost_point, const double z);
+
+LineString2d extendLine(
+  const lanelet::ConstPoint3d & lanelet_point1, const lanelet::ConstPoint3d & lanelet_point2,
+  const double & length);
 
 template <class T>
 std::vector<T> concatVector(const std::vector<T> & vec1, const std::vector<T> & vec2)
