@@ -143,6 +143,19 @@ TEST(trajectory, searchZeroVelocityIndex)
 
     EXPECT_EQ(*searchZeroVelocityIndex(traj.points), idx_ans);
   }
+
+  // Search from src_idx to dst_idx
+  {
+    const size_t idx_ans = 3;
+
+    auto traj = generateTestTrajectory<Trajectory>(10, 1.0, 1.0);
+    updateTrajectoryVelocityAt(traj.points, idx_ans, 0.0);
+
+    EXPECT_FALSE(searchZeroVelocityIndex(traj.points, 0, 3));
+    EXPECT_EQ(*searchZeroVelocityIndex(traj.points, 0, 4), idx_ans);
+    EXPECT_EQ(*searchZeroVelocityIndex(traj.points, 3, 10), idx_ans);
+    EXPECT_FALSE(searchZeroVelocityIndex(traj.points, 4, 10));
+  }
 }
 
 TEST(trajectory, findNearestIndex_StraightTrajectory)

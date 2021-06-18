@@ -35,18 +35,25 @@ void validateNonEmpty(const T & points)
 }
 
 template <class T>
-boost::optional<size_t> searchZeroVelocityIndex(const T & points_with_twist)
+boost::optional<size_t> searchZeroVelocityIndex(
+  const T & points_with_twist, const size_t src_idx, const size_t dst_idx)
 {
   validateNonEmpty(points_with_twist);
 
   constexpr double epsilon = 1e-3;
-  for (size_t i = 0; i < points_with_twist.size(); ++i) {
+  for (size_t i = src_idx; i < dst_idx; ++i) {
     if (std::fabs(points_with_twist.at(i).twist.linear.x) < epsilon) {
       return i;
     }
   }
 
   return {};
+}
+
+template <class T>
+boost::optional<size_t> searchZeroVelocityIndex(const T & points_with_twist)
+{
+  return searchZeroVelocityIndex(points_with_twist, 0, points_with_twist.size());
 }
 
 template <class T>
