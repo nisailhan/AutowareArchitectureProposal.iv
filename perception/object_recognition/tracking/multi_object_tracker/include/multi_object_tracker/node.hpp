@@ -41,25 +41,27 @@ private:  // ros
   ros::NodeHandle pnh_;
   ros::Publisher pub_;
   ros::Subscriber sub_;
-  ros::Timer publish_timer_;  // publish timer
+  std::unique_ptr<ros::Timer> timer_ptr_;  // publish timer
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_;
 
-  void measurementCallback(
+  void onMeasurement(
     const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr & input_objects_msg);
-  void publishTimerCallback(const ros::TimerEvent & e);
+  void onTimer(const ros::TimerEvent & e);
 
   std::string world_frame_id_;  // tracking frame
   std::list<std::shared_ptr<Tracker>> list_tracker_;
   std::unique_ptr<DataAssociation> data_association_;
-  bool enable_delay_compensation_;
-  bool transformDynamicObjects(
-    const autoware_perception_msgs::DynamicObjectWithFeatureArray & input_msg,
-    const std::string & target_frame_id,
-    autoware_perception_msgs::DynamicObjectWithFeatureArray & output_msg);
+
   void checkTrackerLifeCycle(
-    std::list<std::shared_ptr<Tracker>> & list_tracker, const ros::Time & time);
-  void publish(const ros::Time & time);
+    std::list<std::shared_ptr<Tracker>> & list_tracker, const ros::Time & time,
+    const geometry_msgs::Transform & self_transform);
+  void sanitizeTracker(std::list<std::shared_ptr<Tracker>> & list_tracker, const ros::Time & time);
+  std::shared_ptr<Tracker> createNewTracker(
+    const autoware_perception_msgs::DynamicObject & object, const ros::Time & time) const;
+
+  void publish(const ros::Time & time) const;
+  inline bool shouldTrackerPublish(const std::shared_ptr<const Tracker> tracker) const;
 
 public:
   MultiObjectTrackerNode();

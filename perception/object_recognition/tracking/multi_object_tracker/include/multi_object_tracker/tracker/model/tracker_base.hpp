@@ -28,13 +28,14 @@
 class Tracker
 {
 protected:
-  boost::uuids::uuid getUUID() { return uuid_; }
+  boost::uuids::uuid getUUID() const { return uuid_; }
   void setType(int type) { type_ = type; }
 
 private:
   boost::uuids::uuid uuid_;
   int type_;
   int no_measurement_count_;
+  int total_no_measurement_count_;
   int total_measurement_count_;
   ros::Time last_update_with_measurement_time_;
 
@@ -44,14 +45,15 @@ public:
   bool updateWithMeasurement(
     const autoware_perception_msgs::DynamicObject & object, const ros::Time & measurement_time);
   bool updateWithoutMeasurement();
-  int getType() { return type_; }
-  int getNoMeasurementCount() { return no_measurement_count_; }
-  int getTotalMeasurementCount() { return total_measurement_count_; }
-  double getElapsedTimeFromLastUpdate()
+  int getType() const { return type_; }
+  int getNoMeasurementCount() const { return no_measurement_count_; }
+  int getTotalNoMeasurementCount() const { return total_no_measurement_count_; }
+  int getTotalMeasurementCount() const { return total_measurement_count_; }
+  double getElapsedTimeFromLastUpdate() const
   {
     return (ros::Time::now() - last_update_with_measurement_time_).toSec();
   }
-  virtual geometry_msgs::PoseWithCovariance getPoseWithCovariance(const ros::Time & time);
+  virtual geometry_msgs::PoseWithCovariance getPoseWithCovariance(const ros::Time & time) const;
 
   /*
    *　Pure virtual function
@@ -62,6 +64,6 @@ protected:
 
 public:
   virtual bool getEstimatedDynamicObject(
-    const ros::Time & time, autoware_perception_msgs::DynamicObject & object) = 0;
+    const ros::Time & time, autoware_perception_msgs::DynamicObject & object) const = 0;
   virtual bool predict(const ros::Time & time) = 0;
 };

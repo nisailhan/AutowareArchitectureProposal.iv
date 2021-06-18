@@ -22,6 +22,7 @@ Tracker::Tracker(const ros::Time & time, const int type)
 : uuid_(unique_id::fromRandom()),
   type_(type),
   no_measurement_count_(0),
+  total_no_measurement_count_(0),
   total_measurement_count_(1),
   last_update_with_measurement_time_(time)
 {
@@ -40,10 +41,11 @@ bool Tracker::updateWithMeasurement(
 bool Tracker::updateWithoutMeasurement()
 {
   ++no_measurement_count_;
+  ++total_no_measurement_count_;
   return true;
 }
 
-geometry_msgs::PoseWithCovariance Tracker::getPoseWithCovariance(const ros::Time & time)
+geometry_msgs::PoseWithCovariance Tracker::getPoseWithCovariance(const ros::Time & time) const
 {
   autoware_perception_msgs::DynamicObject object;
   getEstimatedDynamicObject(time, object);

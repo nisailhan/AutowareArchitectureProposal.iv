@@ -38,6 +38,6 @@ public:
   bool measure(
     const autoware_perception_msgs::DynamicObject & object, const ros::Time & time) override;
   bool getEstimatedDynamicObject(
-    const ros::Time & time, autoware_perception_msgs::DynamicObject & object) override;
+    const ros::Time & time, autoware_perception_msgs::DynamicObject & object) const override;
   virtual ~MultipleVehicleTracker(){};
 };

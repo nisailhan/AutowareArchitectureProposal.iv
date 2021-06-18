@@ -45,7 +45,7 @@ bool PedestrianAndBicycleTracker::measure(
 }
 
 bool PedestrianAndBicycleTracker::getEstimatedDynamicObject(
-  const ros::Time & time, autoware_perception_msgs::DynamicObject & object)
+  const ros::Time & time, autoware_perception_msgs::DynamicObject & object) const
 {
   if (getType() == autoware_perception_msgs::Semantic::PEDESTRIAN) {
     pedestrian_tracker_.getEstimatedDynamicObject(time, object);

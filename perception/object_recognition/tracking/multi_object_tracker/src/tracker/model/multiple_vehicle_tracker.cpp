@@ -45,7 +45,7 @@ bool MultipleVehicleTracker::measure(
 }
 
 bool MultipleVehicleTracker::getEstimatedDynamicObject(
-  const ros::Time & time, autoware_perception_msgs::DynamicObject & object)
+  const ros::Time & time, autoware_perception_msgs::DynamicObject & object) const
 {
   if (getType() == autoware_perception_msgs::Semantic::CAR) {
     normal_vehicle_tracker_.getEstimatedDynamicObject(time, object);
