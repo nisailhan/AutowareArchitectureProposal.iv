@@ -33,11 +33,11 @@
 
 namespace roi_cluster_fusion
 {
-class Debuger
+class Debugger
 {
 public:
-  Debuger(const ros::NodeHandle & nh, const ros::NodeHandle & pnh, const int camera_num);
-  ~Debuger() = default;
+  Debugger(const ros::NodeHandle & nh, const ros::NodeHandle & pnh, const int camera_num);
+  ~Debugger() = default;
   void showImage(
     const int id, const ros::Time & time,
     const std::vector<sensor_msgs::RegionOfInterest> & image_rois,
@@ -122,7 +122,7 @@ private:
   int rois_number_;
   std::map<int, sensor_msgs::CameraInfo> m_camera_info_;
 
-  std::shared_ptr<Debuger> debuger_;
+  std::shared_ptr<Debugger> debugger_;
 };
 
 }  // namespace roi_cluster_fusion

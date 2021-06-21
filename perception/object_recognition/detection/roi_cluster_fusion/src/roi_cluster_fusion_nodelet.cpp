@@ -39,7 +39,7 @@
 
 namespace roi_cluster_fusion
 {
-Debuger::Debuger(const ros::NodeHandle & nh, const ros::NodeHandle & pnh, const int camera_num)
+Debugger::Debugger(const ros::NodeHandle & nh, const ros::NodeHandle & pnh, const int camera_num)
 : nh_(nh), pnh_(pnh)
 {
   image_transport_ = std::make_shared<image_transport::ImageTransport>(pnh_);
@@ -47,17 +47,17 @@ Debuger::Debuger(const ros::NodeHandle & nh, const ros::NodeHandle & pnh, const 
   for (int id = 0; id < camera_num; ++id) {
     image_subs_.push_back(image_transport_->subscribe(
       "input/image_raw" + std::to_string(id), 1,
-      boost::bind(&Debuger::imageCallback, this, _1, id)));
+      boost::bind(&Debugger::imageCallback, this, _1, id)));
     image_pubs_.push_back(image_transport_->advertise("output/image_raw" + std::to_string(id), 1));
     image_buffers_.at(id).set_capacity(5);
   }
 }
 
-void Debuger::imageCallback(const sensor_msgs::ImageConstPtr & input_image_msg, const int id){
+void Debugger::imageCallback(const sensor_msgs::ImageConstPtr & input_image_msg, const int id){
   image_buffers_.at(id).push_front(input_image_msg);
 }
 
-void Debuger::showImage(
+void Debugger::showImage(
   const int id, const ros::Time & time,
   const std::vector<sensor_msgs::RegionOfInterest> & image_rois,
   const std::vector<sensor_msgs::RegionOfInterest> & pointcloud_rois,
@@ -222,7 +222,7 @@ void RoiClusterFusionNodelet::onInit()
 
   bool debug_mode;
   private_nh_.param<bool>("debug_mode", debug_mode, false);
-  if (debug_mode) debuger_ = std::make_shared<Debuger>(nh_, private_nh_, rois_number_);
+  if (debug_mode) debugger_ = std::make_shared<Debugger>(nh_, private_nh_, rois_number_);
 }
 
 void RoiClusterFusionNodelet::cameraInfoCallback(
@@ -395,9 +395,10 @@ void RoiClusterFusionNodelet::fusionCallback(
           input_roi_msg->feature_objects.at(i).object.semantic;
       debug_image_rois.push_back(input_roi_msg->feature_objects.at(i).feature.roi);
     }
-
-    debuger_->showImage(
-      id, input_roi_msg->header.stamp, debug_image_rois, debug_pointcloud_rois, debug_image_points);
+    if (debugger_) {
+      debugger_->showImage(
+        id, input_roi_msg->header.stamp, debug_image_rois, debug_pointcloud_rois, debug_image_points);
+    }
   }
   // publish output msg
   labeled_cluster_pub_.publish(output_msg);
