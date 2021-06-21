@@ -7,6 +7,10 @@
          type="rviz::CarInitialPoseTool"
          base_class_type="rviz::Tool">
   </class>
+  <class name="rviz/UnknownInitialPoseTool"
+         type="rviz::UnknownInitialPoseTool"
+         base_class_type="rviz::Tool">
+  </class>
   <class name="rviz/DeleteAllObjectsTool"
          type="rviz::DeleteAllObjectsTool"
          base_class_type="rviz::Tool">
