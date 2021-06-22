@@ -25,6 +25,7 @@
 #include <geometry_msgs/TwistStamped.h>
 #include <ros/ros.h>
 #include <std_msgs/Bool.h>
+#include <std_msgs/Float32.h>
 #include <std_msgs/Float32MultiArray.h>
 
 #include <eigen3/Eigen/Core>
@@ -66,6 +67,7 @@ private:
   ros::Subscriber sub_current_vel_;
   ros::Subscriber sub_trajectory_;
   ros::Publisher pub_control_cmd_;
+  ros::Publisher pub_slope_;
   ros::Publisher pub_debug_;
   ros::Timer timer_control_;
 

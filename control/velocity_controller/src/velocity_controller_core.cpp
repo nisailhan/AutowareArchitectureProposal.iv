@@ -148,6 +148,7 @@ VelocityController::VelocityController()
   sub_trajectory_ =
     pnh_.subscribe("current_trajectory", 1, &VelocityController::callbackTrajectory, this);
   pub_control_cmd_ = pnh_.advertise<autoware_control_msgs::ControlCommandStamped>("control_cmd", 1);
+  pub_slope_ = pnh_.advertise<std_msgs::Float32>("slope_angle", 1);
   pub_debug_ = pnh_.advertise<std_msgs::Float32MultiArray>("debug_values", 1);
   timer_control_ = nh_.createTimer(
     ros::Duration(1.0 / control_rate_), &VelocityController::callbackTimerControl, this);
@@ -401,15 +402,26 @@ VelocityController::CtrlCmd VelocityController::calcCtrlCmd(
   prev_shift_ = shift;
   debug_values_.setValues(DebugValues::TYPE::SHIFT, static_cast<double>(shift));
 
-  if (control_state_ != ControlState::EMERGENCY) {
-    // pitch
-    const double traj_pitch = getPitchByTraj(*trajectory_ptr_, closest_idx);
-    const double raw_pitch = getPitchByPose(current_pose_ptr_->pose.orientation);
-    const double pitch = use_traj_for_pitch_ ? traj_pitch : lpf_pitch_.filter(raw_pitch);
-    updatePitchDebugValues(pitch, traj_pitch, raw_pitch);
+  // pitch
+  double pitch = 0.0;
+  {
+    // TODO(Horibe): closest_idx is indefinite value in EMERGENCY state.
+    if (control_state_ != ControlState::EMERGENCY) {
+      const double traj_pitch = getPitchByTraj(*trajectory_ptr_, closest_idx);
+      const double raw_pitch = getPitchByPose(current_pose_ptr_->pose.orientation);
+      pitch = use_traj_for_pitch_ ? traj_pitch : lpf_pitch_.filter(raw_pitch);
+      updatePitchDebugValues(pitch, traj_pitch, raw_pitch);
+    }
 
-    // debug values for vel and acc
-    updateDebugVelAcc(current_vel, vel_cmd, acc_cmd, closest_idx);
+    std_msgs::Float32 msg;
+    msg.data = pitch;
+    pub_slope_.publish(msg);
+  }
+
+  // debug values for vel and acc
+  updateDebugVelAcc(current_vel, vel_cmd, acc_cmd, closest_idx);
+
+  if (control_state_ != ControlState::EMERGENCY) {
     double filtered_acc_cmd = calcFilteredAcc(acc_cmd, pitch, dt, shift);
     return CtrlCmd{vel_cmd, filtered_acc_cmd};
   } else {
