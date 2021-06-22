@@ -64,6 +64,20 @@ OccupancyGridMap::OccupancyGridMap(
 {
 }
 
+bool OccupancyGridMap::worldToMap(double wx, double wy, unsigned int& mx, unsigned int& my) const
+{
+  if (wx < origin_x_ || wy < origin_y_)
+    return false;
+
+  mx = (int)std::floor((wx - origin_x_) / resolution_);
+  my = (int)std::floor((wy - origin_y_) / resolution_);
+
+  if (mx < size_x_ && my < size_y_)
+    return true;
+
+  return false;
+}
+
 void OccupancyGridMap::raytrace2D(
   const sensor_msgs::PointCloud2 & pointcloud, const geometry_msgs::Pose & robot_pose)
 {

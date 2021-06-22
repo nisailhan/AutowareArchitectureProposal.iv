@@ -32,10 +32,10 @@ public:
   : OccupancyGridMapUpdaterInterface(cells_size_x, cells_size_y, resolution)
   {
     probability_matrix_(Index::OCCUPIED, Index::OCCUPIED) = 0.95;
-    probability_matrix_(Index::OCCUPIED, Index::FREE) =
+    probability_matrix_(Index::FREE, Index::OCCUPIED) =
       1.0 - probability_matrix_(OCCUPIED, OCCUPIED);
     probability_matrix_(Index::FREE, Index::FREE) = 0.8;
-    probability_matrix_(Index::FREE, Index::OCCUPIED) = 1.0 - probability_matrix_(FREE, FREE);
+    probability_matrix_(Index::OCCUPIED, Index::FREE) = 1.0 - probability_matrix_(FREE, FREE);
   };
   ~OccupancyGridMapBBFUpdater() = default;
   virtual bool update(

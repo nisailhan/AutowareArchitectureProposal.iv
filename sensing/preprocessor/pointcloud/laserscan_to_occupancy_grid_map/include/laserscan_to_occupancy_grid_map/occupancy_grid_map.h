@@ -83,6 +83,8 @@ public:
 private:
   void raytraceFreespace(
     const sensor_msgs::PointCloud2 & pointcloud, const geometry_msgs::Pose & robot_pose);
+
+  bool worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my) const;
 };
 
 }  // namespace costmap_2d
