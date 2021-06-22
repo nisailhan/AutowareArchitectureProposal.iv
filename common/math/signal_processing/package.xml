@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>signal_processing</name>
+  <version>0.1.0</version>
+  <description>The signal processing package</description>
+  <maintainer email="takayuki.murooka@tier4.jp">Takayuki Murooka</maintainer>
+
+  <license>Apache 2</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>roscpp</depend>
+  <depend>rostest</depend>
+  <depend>rosunit</depend>
+
+</package>
