@@ -13,7 +13,7 @@ catkin_package(
   INCLUDE_DIRS
     include
   LIBRARIES
-    signal_processing
+    lowpass_filter_1d
 )
 
 include_directories(
