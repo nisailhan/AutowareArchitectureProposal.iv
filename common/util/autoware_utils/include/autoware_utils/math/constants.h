@@ -19,4 +19,5 @@
 namespace autoware_utils
 {
 constexpr double pi = 3.14159265358979323846;  // To be replaced by std::numbers::pi in C++20
+constexpr double gravity = 9.80665;
 }  // namespace autoware_utils
