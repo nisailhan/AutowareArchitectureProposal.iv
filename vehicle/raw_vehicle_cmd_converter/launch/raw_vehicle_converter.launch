@@ -1,16 +1,31 @@
 <?xml version="1.0"?>
 <launch>
 
+  <arg name="converter_param_path" default="$(find raw_vehicle_cmd_converter)/config/converter_param.yaml" />
   <arg name="csv_path_accel_map" default="$(find raw_vehicle_cmd_converter)/data/default/accel_map.csv"/>
   <arg name="csv_path_brake_map" default="$(find raw_vehicle_cmd_converter)/data/default/brake_map.csv"/>
+  <arg name="csv_path_steer_map" default="$(find raw_vehicle_cmd_converter)/data/default/steer_map.csv"/>
 
   <arg name="max_throttle" default="0.4"/>
   <arg name="max_brake" default="0.8"/>
+  <arg name="max_steer" default="10.0"/>
+  <arg name="min_steer" default="-10.0"/>
+  <arg name="convert_accel_cmd" default="true"/>
+  <arg name="convert_brake_cmd" default="true"/>
+  <arg name="convert_steer_cmd" default="true"/>
+
 
   <node pkg="raw_vehicle_cmd_converter" type="raw_vehicle_cmd_converter_node" name="raw_vehicle_cmd_converter" output="screen">
+    <rosparam command="load" file="$(arg converter_param_path)" />
     <param name="csv_path_accel_map" value="$(arg csv_path_accel_map)" />
     <param name="csv_path_brake_map" value="$(arg csv_path_brake_map)" />
+    <param name="csv_path_steer_map" value="$(arg csv_path_steer_map)"/>
     <param name="max_throttle" value="$(arg max_throttle)" />
     <param name="max_brake" value="$(arg max_brake)" />
+    <param name="max_steer" value="$(arg max_steer)" />
+    <param name="min_steer" value="$(arg min_steer)" />
+    <param name="convert_accel_cmd" value="$(arg convert_accel_cmd)" />
+    <param name="convert_brake_cmd" value="$(arg convert_brake_cmd)" />
+    <param name="convert_steer_cmd" value="$(arg convert_steer_cmd)" />
   </node>
 </launch>

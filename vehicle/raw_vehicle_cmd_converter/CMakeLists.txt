@@ -26,6 +26,8 @@ add_library(accel_map_converter
   src/brake_map.cpp
   src/csv_loader.cpp
   src/interpolate.cpp
+  src/pid.cpp
+  src/steer_converter.cpp
 )
 target_link_libraries(accel_map_converter ${catkin_LIBRARIES})
 add_dependencies(accel_map_converter ${catkin_EXPORTED_TARGETS})
@@ -51,6 +53,7 @@ install(DIRECTORY include/${PROJECT_NAME}/
 
 install(
   DIRECTORY
+    config
     launch
     data
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}

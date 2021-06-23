@@ -38,8 +38,10 @@
 #include <pacmod_msgs/SystemRptInt.h>
 #include <pacmod_msgs/WheelSpeedRpt.h>
 
+#include <autoware_control_msgs/ControlCommandStamped.h>
+#include <autoware_vehicle_msgs/ActuationCommandStamped.h>
+#include <autoware_vehicle_msgs/ActuationStatusStamped.h>
 #include <autoware_vehicle_msgs/ControlMode.h>
-#include <autoware_vehicle_msgs/RawVehicleCommand.h>
 #include <autoware_vehicle_msgs/ShiftStamped.h>
 #include <autoware_vehicle_msgs/Steering.h>
 #include <autoware_vehicle_msgs/TurnSignal.h>
@@ -63,9 +65,12 @@ private:
 
   /* subscribers */
   // From Autoware
-  ros::Subscriber raw_vehicle_cmd_sub_;
+  ros::Subscriber emergency_sub_;
+  ros::Subscriber control_cmd_sub_;
+  ros::Subscriber shift_cmd_sub_;
   ros::Subscriber turn_signal_cmd_sub_;
   ros::Subscriber engage_cmd_sub_;
+  ros::Subscriber actuation_cmd_sub_;
 
   // From Pacmod
   message_filters::Subscriber<pacmod_msgs::SystemRptFloat> steer_wheel_rpt_sub_;
@@ -86,6 +91,7 @@ private:
   ros::Publisher raw_steer_cmd_pub_;  //only for debug
   ros::Publisher shift_cmd_pub_;
   ros::Publisher turn_cmd_pub_;
+  ros::Publisher actuation_command_pub_;
 
   // To Autoware
   ros::Publisher control_mode_pub_;
@@ -93,6 +99,7 @@ private:
   ros::Publisher steering_status_pub_;
   ros::Publisher shift_status_pub_;
   ros::Publisher turn_signal_status_pub_;
+  ros::Publisher actuation_status_pub_;
 
   /* ros param */
   std::string base_frame_id_;
@@ -128,8 +135,10 @@ private:
   const int hazard_recover_cmd_num_ = 5;
 
   /* input values */
-  autoware_vehicle_msgs::RawVehicleCommand::ConstPtr raw_vehicle_cmd_ptr_;
+  autoware_vehicle_msgs::ActuationCommandStamped::ConstPtr actuation_cmd_ptr_;
+  autoware_control_msgs::ControlCommandStamped::ConstPtr control_cmd_ptr_;
   autoware_vehicle_msgs::TurnSignal::ConstPtr turn_signal_cmd_ptr_;
+  autoware_vehicle_msgs::ShiftStamped::ConstPtr shift_cmd_ptr_;
 
   pacmod_msgs::SystemRptFloat::ConstPtr steer_wheel_rpt_ptr_;  // [rad]
   pacmod_msgs::WheelSpeedRpt::ConstPtr wheel_speed_rpt_ptr_;   // [m/s]
@@ -140,11 +149,16 @@ private:
   pacmod_msgs::SystemRptInt::ConstPtr turn_rpt_ptr_;
   pacmod_msgs::SteerSystemCmd prev_steer_cmd_;
   bool engage_cmd_ = false;
-  ros::Time vehicle_command_received_time_;
+  bool is_emergency_ = false;
+  ros::Time control_command_received_time_;
+  ros::Time actuation_command_received_time_;
   ros::Time last_shift_inout_matched_time_;
 
   /* callbacks */
-  void callbackVehicleCmd(const autoware_vehicle_msgs::RawVehicleCommand::ConstPtr & msg);
+  void callbackEmergency(const std_msgs::Bool::ConstPtr & msg);
+  void callbackActuationCmd(const autoware_vehicle_msgs::ActuationCommandStamped::ConstPtr & msg);
+  void callbackControlCmd(const autoware_control_msgs::ControlCommandStamped::ConstPtr & msg);
+  void callbackShiftCmd(const autoware_vehicle_msgs::ShiftStamped::ConstPtr & msg);
   void callbackTurnSignalCmd(const autoware_vehicle_msgs::TurnSignal::ConstPtr & msg);
   void callbackEngage(const std_msgs::BoolConstPtr & msg);
   void callbackPacmodRpt(

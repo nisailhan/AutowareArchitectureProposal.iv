@@ -21,7 +21,11 @@ add_message_files(
     RawVehicleCommand.msg
     RawControlCommand.msg
     RawControlCommandStamped.msg
-)
+    ActuationCommand.msg
+    ActuationCommandStamped.msg
+    ActuationStatus.msg
+    ActuationStatusStamped.msg
+    )
 
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
