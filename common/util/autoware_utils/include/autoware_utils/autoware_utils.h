@@ -21,6 +21,7 @@
 #include <autoware_utils/geometry/pose_deviation.h>
 #include <autoware_utils/math/constants.h>
 #include <autoware_utils/math/normalization.h>
+#include <autoware_utils/math/range.h>
 #include <autoware_utils/math/unit_conversion.h>
 #include <autoware_utils/ros/debug_publisher.h>
 #include <autoware_utils/ros/marker_helper.h>
