@@ -212,12 +212,15 @@ void OccupancyGridMapNodelet::onLaserscanPointCloud2WithObstacleAndRaw(
     occupancy_grid_map_updater_ptr_->getSizeInCellsX(),
     occupancy_grid_map_updater_ptr_->getSizeInCellsY(),
     occupancy_grid_map_updater_ptr_->getResolution());
-  oneshot_occupancy_grid_map.updateFreespaceCells(trans_raw_pc, pose);
+  oneshot_occupancy_grid_map.updateOrigin(
+    pose.position.x - oneshot_occupancy_grid_map.getSizeInMetersX() / 2,
+    pose.position.y - oneshot_occupancy_grid_map.getSizeInMetersY() / 2);
+  oneshot_occupancy_grid_map.updateFreespaceCells(trans_raw_pc);
   oneshot_occupancy_grid_map.raytrace2D(trans_laserscan_pc, pose);
-  oneshot_occupancy_grid_map.updateOccupiedCells(trans_obstacle_pc, pose);
+  oneshot_occupancy_grid_map.updateOccupiedCells(trans_obstacle_pc);
 
   // Update with bayes filter
-  occupancy_grid_map_updater_ptr_->update(oneshot_occupancy_grid_map, pose);
+  occupancy_grid_map_updater_ptr_->update(oneshot_occupancy_grid_map);
 
   // publish
   occupancy_grid_map_pub_.publish(OccupancyGridMapToMsgPtr(
@@ -239,8 +242,8 @@ boost::shared_ptr<nav_msgs::OccupancyGrid> OccupancyGridMapNodelet::OccupancyGri
 
   double wx, wy;
   occupancy_grid_map.mapToWorld(0, 0, wx, wy);
-  msg_ptr->info.origin.position.x = wx - msg_ptr->info.resolution / 2;
-  msg_ptr->info.origin.position.y = wy - msg_ptr->info.resolution / 2;
+  msg_ptr->info.origin.position.x = occupancy_grid_map.getOriginX();
+  msg_ptr->info.origin.position.y = occupancy_grid_map.getOriginY();
   msg_ptr->info.origin.position.z = robot_pose_z;
   msg_ptr->info.origin.orientation.w = 1.0;
 

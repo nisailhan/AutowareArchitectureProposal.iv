@@ -29,8 +29,7 @@ public:
   : Costmap2D(
       cells_size_x, cells_size_y, resolution, 0.f, 0.f, occupancy_cost_value::NO_INFORMATION){};
   virtual ~OccupancyGridMapUpdaterInterface() = default;
-  virtual bool update(
-    const Costmap2D & oneshot_occupancy_grid_map, const geometry_msgs::Pose & robot_pose) = 0;
+  virtual bool update(const Costmap2D & oneshot_occupancy_grid_map) = 0;
 };
 
 }  // namespace costmap_2d

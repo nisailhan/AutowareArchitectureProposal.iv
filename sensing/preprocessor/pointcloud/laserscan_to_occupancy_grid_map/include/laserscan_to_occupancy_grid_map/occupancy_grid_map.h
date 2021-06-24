@@ -74,15 +74,18 @@ public:
   void raytrace2D(
     const sensor_msgs::PointCloud2 & pointcloud, const geometry_msgs::Pose & robot_pose);
 
-  void updateFreespaceCells(
-    const sensor_msgs::PointCloud2 & pointcloud, const geometry_msgs::Pose & robot_pose);
+  void updateFreespaceCells(const sensor_msgs::PointCloud2 & pointcloud);
 
-  void updateOccupiedCells(
-    const sensor_msgs::PointCloud2 & pointcloud, const geometry_msgs::Pose & robot_pose);
+  void updateOccupiedCells(const sensor_msgs::PointCloud2 & pointcloud);
+
+  void updateOrigin(double new_origin_x, double new_origin_y);
 
 private:
   void raytraceFreespace(
     const sensor_msgs::PointCloud2 & pointcloud, const geometry_msgs::Pose & robot_pose);
+
+  void updateCellsByPointCloud(
+    const sensor_msgs::PointCloud2 & pointcloud, const unsigned char cost);
 
   bool worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my) const;
 };

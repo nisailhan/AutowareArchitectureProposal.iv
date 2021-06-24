@@ -38,8 +38,7 @@ public:
     probability_matrix_(Index::OCCUPIED, Index::FREE) = 1.0 - probability_matrix_(FREE, FREE);
   };
   ~OccupancyGridMapBBFUpdater() = default;
-  virtual bool update(
-    const Costmap2D & oneshot_occupancy_grid_map, const geometry_msgs::Pose & robot_pose) override;
+  virtual bool update(const Costmap2D & oneshot_occupancy_grid_map) override;
 
 private:
   inline unsigned char applyBBF(const unsigned char & z, const unsigned char & o);

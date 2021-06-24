@@ -44,11 +44,9 @@ inline unsigned char OccupancyGridMapBBFUpdater::applyBBF(
     static_cast<unsigned char>(254));
 }
 
-bool OccupancyGridMapBBFUpdater::update(
-  const Costmap2D & oneshot_occupancy_grid_map, const geometry_msgs::Pose & robot_pose)
+bool OccupancyGridMapBBFUpdater::update(const Costmap2D & oneshot_occupancy_grid_map)
 {
-  updateOrigin(
-    robot_pose.position.x - getSizeInMetersX() / 2, robot_pose.position.y - getSizeInMetersY() / 2);
+  updateOrigin(oneshot_occupancy_grid_map.getOriginX(), oneshot_occupancy_grid_map.getOriginY());
   for (unsigned int x = 0; x < getSizeInCellsX(); x++) {
     for (unsigned int y = 0; y < getSizeInCellsY(); y++) {
       unsigned int index = getIndex(x, y);
