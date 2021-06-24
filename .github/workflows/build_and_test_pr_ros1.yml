@@ -1,16 +1,27 @@
-name: Build and test ROS1
+name: Build and test for PR ROS1
 
 on:
-  schedule:
-    - cron: "0 19 * * *" # run at 4 AM JST
+  pull_request:
+    branches:
+      - master
   workflow_dispatch:
 
 jobs:
-  build-and-test-ros1:
+  build-and-test-pr-ros1:
     runs-on: ubuntu-latest
-    container: osrf/ros:noetic-desktop
+    container: osrf/ros:melodic-desktop
 
     steps:
+      - name: Cancel previous runs
+        uses: styfle/cancel-workflow-action@0.9.0
+
+      # https://github.com/actions/checkout/issues/335#issuecomment-763159788
+      - name: Upgrade git to 2.18+
+        run: |
+          apt-get update
+          apt-get -y install software-properties-common
+          add-apt-repository -y ppa:git-core/ppa
+
       - name: Install git vcstool colcon for ROS1
         run: |
           apt-get -y update
@@ -18,6 +29,9 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v2
+        with:
+          # Fetch with depth=0 to calculate modified packages
+          fetch-depth: 0
 
       - name: Install pip
         run: |
@@ -27,19 +41,20 @@ jobs:
       - name: Search modified package
         id: list_packages
         run: |
-          echo ::set-output name=package_list::$(colcon list --names-only)
+          ${GITHUB_WORKSPACE}/.github/workflows/get_modified_package.sh
 
       - name: Show target packages
         run: |
           echo "Target packages: ${{ steps.list_packages.outputs.package_list }}"
 
       - name: Clone dependency packages
+        if: ${{ steps.list_packages.outputs.package_list != '' }}
         run: |
           mkdir dependency_ws
           vcs import dependency_ws < build_depends.repos
           apt-get -y update
           rosdep update
-          rosdep install -y --from-paths . --ignore-src --rosdistro noetic
+          rosdep install -y --from-paths . --ignore-src --rosdistro melodic
 
       - name: Setup OSQP
         run: |
@@ -52,15 +67,17 @@ jobs:
           cmake --build . --target install
 
       - name: Build
+        if: ${{ steps.list_packages.outputs.package_list != '' }}
         run: |
-          . /opt/ros/noetic/setup.sh
+          . /opt/ros/melodic/setup.sh
           colcon build --event-handlers console_cohesion+ \
-            --packages-up-to ${{ steps.list_packages.outputs.package_list }} \
+            --packages-above-and-dependencies ${{ steps.list_packages.outputs.package_list }} \
             --cmake-args -DCMAKE_BUILD_TYPE=Release
 
       - name: Run tests
+        if: ${{ steps.list_packages.outputs.package_list != '' }}
         run: |
-          . /opt/ros/noetic/setup.sh
+          . /opt/ros/melodic/setup.sh
           colcon test --event-handlers console_cohesion+ \
-            --packages-select ${{ steps.list_packages.outputs.package_list }} \
+            --packages-above ${{ steps.list_packages.outputs.package_list }} \
             --return-code-on-test-failure
