@@ -94,19 +94,25 @@ VelocityController::VelocityController()
 
   // parameters for smooth stop state
   {
-    double stop_dist, weak_brake_time, weak_brake_acc, increasing_brake_time,
-      increasing_brake_gradient, stop_brake_time, stop_brake_acc;
-    pnh_.param("smooth_stop_weak_brake_time", weak_brake_time, 3.0);              // [sec]
-    pnh_.param("smooth_stop_weak_brake_acc", weak_brake_acc, -0.4);               // [m/s^2]
-    pnh_.param("smooth_stop_increasing_brake_time", increasing_brake_time, 3.0);  // [sec]
-    pnh_.param(
-      "smooth_stop_increasing_brake_gradient", increasing_brake_gradient, -0.05);  // [m/s^3]
-    pnh_.param("smooth_stop_stop_brake_time", stop_brake_time, 2.0);               // [sec]
-    pnh_.param("smooth_stop_stop_brake_acc", stop_brake_acc, -1.7);                // [m/s^2]
+    double max_strong_acc, min_strong_acc, weak_acc, weak_stop_acc, strong_stop_acc, max_fast_vel,
+      min_running_vel, min_running_acc, weak_stop_time, weak_stop_dist, strong_stop_dist;
+    pnh_.param("smooth_stop_max_strong_acc", max_strong_acc, -0.5);    // [m/s^2]
+    pnh_.param("smooth_stop_min_strong_acc", min_strong_acc, -1.0);    // [m/s^2]
+    pnh_.param("smooth_stop_weak_acc", weak_acc, -0.3);                // [m/s^2]
+    pnh_.param("smooth_stop_weak_stop_acc", weak_stop_acc, -0.8);      // [m/s^2]
+    pnh_.param("smooth_stop_strong_stop_acc", strong_stop_acc, -3.4);  // [m/s^2]
+
+    pnh_.param("smooth_stop_max_fast_vel", max_fast_vel, 0.5);         // [m/s]
+    pnh_.param("smooth_stop_min_running_vel", min_running_vel, 0.01);  // [m/s]
+    pnh_.param("smooth_stop_min_running_acc", min_running_acc, 0.01);  // [m/s^2]
+    pnh_.param("smooth_stop_weak_stop_time", weak_stop_time, 0.8);     // [s]
+
+    pnh_.param("smooth_stop_weak_stop_dist", weak_stop_dist, -0.3);      // [m]
+    pnh_.param("smooth_stop_strong_stop_dist", strong_stop_dist, -0.5);  // [m]
 
     smooth_stop_.setParams(
-      weak_brake_time, weak_brake_acc, increasing_brake_time, increasing_brake_gradient,
-      stop_brake_time, stop_brake_acc);
+      max_strong_acc, min_strong_acc, weak_acc, weak_stop_acc, strong_stop_acc, max_fast_vel,
+      min_running_vel, min_running_acc, weak_stop_time, weak_stop_dist, strong_stop_dist);
   }
 
   // parameters for stop state
@@ -205,9 +211,12 @@ void VelocityController::callbackConfig(
 
   // stopping state
   smooth_stop_.setParams(
-    config.smooth_stop_weak_brake_time, config.smooth_stop_weak_brake_acc,
-    config.smooth_stop_increasing_brake_time, config.smooth_stop_increasing_brake_gradient,
-    config.smooth_stop_stop_brake_time, config.smooth_stop_stop_brake_acc);
+    config.smooth_stop_max_strong_acc, config.smooth_stop_min_strong_acc,
+    config.smooth_stop_weak_acc, config.smooth_stop_weak_stop_acc,
+    config.smooth_stop_strong_stop_acc, config.smooth_stop_max_fast_vel,
+    config.smooth_stop_min_running_vel, config.smooth_stop_min_running_acc,
+    config.smooth_stop_weak_stop_time, config.smooth_stop_weak_stop_dist,
+    config.smooth_stop_strong_stop_dist);
 
   // stop state
   stopped_vel_ = config.stopped_vel;
@@ -266,7 +275,7 @@ void VelocityController::callbackTimerControl(const ros::TimerEvent & event)
   debug_values_.setValues(DebugValues::TYPE::CTRL_MODE, static_cast<double>(control_state_));
 
   // calculate command velocity and acceleration
-  const CtrlCmd ctrl_cmd = calcCtrlCmd(current_vel, current_acc, *closest_idx);
+  const CtrlCmd ctrl_cmd = calcCtrlCmd(current_vel, current_acc, *closest_idx, stop_dist);
   debug_values_.setValues(DebugValues::TYPE::ACCCMD_PUBLISHED, ctrl_cmd.acc);
 
   // publish control command
@@ -274,6 +283,11 @@ void VelocityController::callbackTimerControl(const ros::TimerEvent & event)
 
   prev_acc_cmd_ = ctrl_cmd.acc;
   prev_vel_cmd_ = ctrl_cmd.vel;
+
+  vel_hist_.push_back({ros::Time::now(), current_vel});
+  while (vel_hist_.size() > control_rate_ * 0.5) {  // 0.5s
+    vel_hist_.erase(vel_hist_.begin());
+  }
 }
 
 void VelocityController::updateControlState(
@@ -302,7 +316,11 @@ void VelocityController::updateControlState(
   if (control_state_ == ControlState::DRIVE) {
     if (enable_smooth_stop_) {
       if (stopping_condition) {
-        smooth_stop_.initTime(ros::Time::now());
+        const double pred_vel_in_target =
+          predictedVelocityInTargetPoint(current_vel, current_acc, delay_compensation_time_);
+        const double pred_stop_dist =
+          *stop_dist - 0.5 * (pred_vel_in_target + current_vel) * delay_compensation_time_;
+        smooth_stop_.init(pred_vel_in_target, pred_stop_dist);
         control_state_ = ControlState::STOPPING;
       }
     } else {
@@ -346,7 +364,8 @@ void VelocityController::updateControlState(
 }
 
 VelocityController::CtrlCmd VelocityController::calcCtrlCmd(
-  const double current_vel, const double current_acc, const int closest_idx)
+  const double current_vel, const double current_acc, const int closest_idx,
+  const boost::optional<double> stop_dist)
 {
   // dt
   const double dt = getDt();
@@ -380,7 +399,8 @@ VelocityController::CtrlCmd VelocityController::calcCtrlCmd(
       "feedback_acc_cmd: %3.3f",
       vel_cmd, acc_cmd, dt, current_vel, target_vel, acc_cmd);
   } else if (control_state_ == ControlState::STOPPING) {
-    acc_cmd = smooth_stop_.calculate();
+    acc_cmd = smooth_stop_.calculate(
+      *stop_dist, current_vel, current_acc, vel_hist_, delay_compensation_time_);
     vel_cmd = stopped_vel_;
 
     ROS_DEBUG("[smooth stop]: Smooth stopping. vel: %3.3f, acc: %3.3f", vel_cmd, acc_cmd);

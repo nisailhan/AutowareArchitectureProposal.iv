@@ -255,7 +255,6 @@ double calcPitch(const geometry_msgs::Pose & p1, const geometry_msgs::Pose & p2)
   return pitch;
 }
 
-// TODO use autoware_utils
 boost::optional<int> calcClosestWithThr(
   const autoware_planning_msgs::Trajectory & trajectory, const geometry_msgs::Pose & pose,
   const double angle_thr, const double dist_thr)

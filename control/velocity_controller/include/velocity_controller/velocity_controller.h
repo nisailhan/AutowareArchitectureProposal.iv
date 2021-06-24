@@ -167,6 +167,7 @@ private:
   // diff limit
   double prev_acc_cmd_;
   double prev_vel_cmd_;
+  std::vector<std::pair<ros::Time, double>> vel_hist_;
 
   // debug values
   DebugValues debug_values_;
@@ -185,7 +186,9 @@ private:
   void updateControlState(
     const double current_vel, const double current_acc, const boost::optional<double> & stop_dist,
     const boost::optional<int> & closest_idx);
-  CtrlCmd calcCtrlCmd(const double current_vec, const double current_acc, const int closest_idx);
+  CtrlCmd calcCtrlCmd(
+    const double current_vec, const double current_acc, const int closest_idx,
+    const boost::optional<double> stop_dist);
 
   double getPitchByPose(const geometry_msgs::Quaternion & quaternion) const;
   double getPitchByTraj(

@@ -57,7 +57,6 @@ boost::optional<double> calcStopDistance(
   const geometry_msgs::Pose & current_pose, const autoware_planning_msgs::Trajectory & traj);
 
 double calcPitch(const geometry_msgs::Pose & p1, const geometry_msgs::Pose & p2);
-// TODO use autoware_utils
 boost::optional<int> calcClosestWithThr(
   const autoware_planning_msgs::Trajectory & trajectory, const geometry_msgs::Pose & pose,
   const double angle_thr, const double dist_thr);
