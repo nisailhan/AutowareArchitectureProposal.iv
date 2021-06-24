@@ -1,0 +1,20 @@
+<launch>
+  <arg name="output" default="screen"/>
+
+  <!-- debug flags -->
+  <arg name="publish_debug_trajs" default="true"/>
+  <arg name="smoother_type" default="JerkFiltered"/>
+
+  <arg name="param_path" default="$(find motion_velocity_smoother)/config/default_motion_velocity_smoother.yaml" />
+  <arg name="smoother_param_path" default="$(find motion_velocity_smoother)/config/$(arg smoother_type).yaml" />
+
+  <node pkg="motion_velocity_smoother" type="motion_velocity_smoother" name="motion_velocity_smoother" output="$(arg output)">
+    <rosparam command="load" file="$(arg param_path)" />
+    <rosparam command="load" file="$(arg smoother_param_path)" />
+    <param name="publish_debug_trajs" value="$(arg publish_debug_trajs)"/>
+    <param name="algorithm_type" value="$(arg smoother_type)" />
+    <remap from="~input/external_velocity_limit_mps" to="/planning/scenario_planning/max_velocity"/> <!-- Topic for setting maximum speed from the outside　(input topic) -->
+    <remap from="~output/current_velocity_limit_mps" to="/planning/scenario_planning/current_max_velocity"/> <!-- Topic for displaying the set maximum speed　(output topic) -->
+  </node>
+
+</launch>
