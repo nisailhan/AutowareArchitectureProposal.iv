@@ -165,8 +165,13 @@ public:
 
   std::shared_ptr<const PlannerData> planner_data_;
 
+  visualization_msgs::MarkerArray getDebugMarker() {return debug_marker_; };
+
 private:
   std::string name_;
+
+protected:
+  visualization_msgs::MarkerArray debug_marker_;
 
 public:
   ApprovalHandler approval_handler_;

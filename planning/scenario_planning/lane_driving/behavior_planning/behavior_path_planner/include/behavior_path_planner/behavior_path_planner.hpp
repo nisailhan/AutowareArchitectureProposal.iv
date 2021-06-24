@@ -40,10 +40,10 @@
 #include <memory>
 #include <vector>
 
-// #include "behavior_path_planner/scene_module/avoidance/avoidance_module.hpp"
+#include "behavior_path_planner/scene_module/avoidance/avoidance_module.hpp"
 #include "behavior_path_planner/scene_module/lane_change/lane_change_module.hpp"
 #include "behavior_path_planner/scene_module/lane_following/lane_following_module.hpp"
-// #include "behavior_path_planner/scene_module/side_shift/side_shift_module.hpp"
+#include "behavior_path_planner/scene_module/side_shift/side_shift_module.hpp"
 
 #include "behavior_path_planner/behavior_tree_manager.hpp"
 #include "behavior_path_planner/data_manager.hpp"
@@ -88,6 +88,8 @@ private:
   // parameters
   BehaviorPathPlannerParameters getCommonParam();
   BehaviorTreeManagerParam getBehaviorTreeManagerParam();
+  SideShiftParameters getSideShiftParam();
+  AvoidanceParameters getAvoidanceParam();
   LaneFollowingParameters getLaneFollowingParam();
   LaneChangeParameters getLaneChangeParam();
 
@@ -134,6 +136,8 @@ private:
 private:
   ros::Publisher debug_drivable_area_publisher_;
   ros::Publisher debug_path_publisher_;
+  ros::Publisher debug_marker_publisher_;
+  void publishDebugMarker(const std::vector<visualization_msgs::MarkerArray> & debug_markers);
 };
 }  // namespace behavior_path_planner
 

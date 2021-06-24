@@ -217,15 +217,6 @@ cv::Point toCVPoint(
   const geometry_msgs::Point & geom_point, const double width_m, const double height_m,
   const double resolution);
 
-// MEMO: From Avoidance
-std::vector<double> calcPathArcLengthArray(
-  const autoware_planning_msgs::PathWithLaneId & path, size_t start = 0,
-  size_t end = std::numeric_limits<size_t>::max());
-
-double calcPathArcLength(
-  const autoware_planning_msgs::PathWithLaneId & path, size_t start = 0,
-  size_t end = std::numeric_limits<size_t>::max());
-
 // TODO(Horibe) template?
 std::vector<double> rangeVector(double start, double diff, double end);
 

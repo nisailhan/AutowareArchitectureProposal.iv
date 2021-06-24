@@ -21,7 +21,9 @@
 #include "behavior_path_planner/utilities.hpp"
 #include "visualization_msgs/MarkerArray.h"
 
+#include "behavior_path_planner/scene_module/avoidance/avoidance_module.hpp"
 #include "behavior_path_planner/scene_module/lane_change/lane_change_module.hpp"
+#include "behavior_path_planner/scene_module/side_shift/side_shift_module.hpp"
 
 namespace behavior_path_planner
 {
@@ -65,9 +67,18 @@ BehaviorPathPlanner::BehaviorPathPlanner() : pnh_("~")
   force_available_publisher_ =
     pnh_.advertise<autoware_planning_msgs::PathChangeModuleArray>("output/force_available", 1);
 
+  // Debug
+  debug_marker_publisher_ = pnh_.advertise<visualization_msgs::MarkerArray>("debug/markers", 1);
+
   // behavior tree manager
   {
     bt_manager_ = std::make_shared<BehaviorTreeManager>(getBehaviorTreeManagerParam());
+
+    auto side_shift_module = std::make_shared<SideShiftModule>("SideShift", getSideShiftParam());
+    bt_manager_->registerSceneModule(side_shift_module);
+
+    auto avoidance_module = std::make_shared<AvoidanceModule>("Avoidance", getAvoidanceParam());
+    bt_manager_->registerSceneModule(avoidance_module);
 
     auto lane_following_module =
       std::make_shared<LaneFollowingModule>("LaneFollowing", getLaneFollowingParam());
@@ -126,6 +137,40 @@ BehaviorPathPlannerParameters BehaviorPathPlanner::getCommonParam()
   return p;
 }
 
+SideShiftParameters BehaviorPathPlanner::getSideShiftParam()
+{
+  SideShiftParameters p;
+  pnh_.param("min_fix_distance", p.min_fix_distance, 20.0);
+  pnh_.param("start_avoid_sec", p.start_avoid_sec, 4.0);
+  pnh_.param("drivable_area_resolution", p.drivable_area_resolution, 0.1);
+  pnh_.param("drivable_area_width", p.drivable_area_width, 100.0);
+  pnh_.param("drivable_area_height", p.drivable_area_height, 50.0);
+  pnh_.param("inside_outside_judge_margin", p.inside_outside_judge_margin, 0.3);
+  return p;
+}
+
+AvoidanceParameters BehaviorPathPlanner::getAvoidanceParam()
+{
+  AvoidanceParameters p;
+  pnh_.param(
+    "avoidance/threshold_distance_object_is_on_center", p.threshold_distance_object_is_on_center,
+    1.0);
+  pnh_.param(
+    "avoidance/threshold_speed_object_is_stopped", p.threshold_speed_object_is_stopped, 1.0);
+  pnh_.param("avoidance/object_check_forward_distance", p.object_check_forward_distance, 100.0);
+  pnh_.param("avoidance/object_check_backward_distance", p.object_check_backward_distance, 2.0);
+  pnh_.param("avoidance/lateral_collision_margin", p.lateral_collision_margin, 2.0);
+  pnh_.param("avoidance/time_to_start_avoidance", p.time_to_start_avoidance, 3.0);
+  pnh_.param("avoidance/min_distance_to_start_avoidance", p.min_distance_to_start_avoidance, 10.0);
+  pnh_.param("avoidance/time_avoiding", p.time_avoiding, 3.0);
+  pnh_.param("avoidance/min_distance_avoiding", p.min_distance_avoiding, 10.0);
+  pnh_.param("avoidance/max_shift_length", p.max_shift_length, 1.5);
+  pnh_.param(
+    "avoidance/min_distance_avoidance_end_to_object", p.min_distance_avoidance_end_to_object, 5.0);
+  pnh_.param("avoidance/time_avoidance_end_to_object", p.time_avoidance_end_to_object, 1.0);
+
+  return p;
+};
 
 LaneFollowingParameters BehaviorPathPlanner::getLaneFollowingParam()
 {
@@ -229,7 +274,7 @@ void BehaviorPathPlanner::run(const ros::TimerEvent & event)
   // path handling
   const auto path = getPath(output);
   const auto path_candidate = getPathCandidate(output);
-  planner_data_->prev_output_path = path;  
+  planner_data_->prev_output_path = path;
 
   path_publisher_.publish(clipPathByGoal(*path));
   path_candidate_publisher_.publish(util::toPath(*path_candidate));
@@ -244,6 +289,8 @@ void BehaviorPathPlanner::run(const ros::TimerEvent & event)
 
   // for remote operation
   publishModuleStatus(bt_manager_->getModulesStatus());
+
+  publishDebugMarker(bt_manager_->getDebugMarkers());
 
   ROS_DEBUG("----- behavior path planner end -----\n\n");
 }
@@ -338,6 +385,16 @@ void BehaviorPathPlanner::publishModuleStatus(
 
   force_available.header.stamp = now;
   force_available_publisher_.publish(force_available);
+}
+
+void BehaviorPathPlanner::publishDebugMarker(
+  const std::vector<visualization_msgs::MarkerArray> & debug_markers)
+{
+  visualization_msgs::MarkerArray msg;
+  for (const auto & markers : debug_markers) {
+    autoware_utils::appendMarkerArray(markers, &msg);
+  }
+  debug_marker_publisher_.publish(msg);
 }
 
 void BehaviorPathPlanner::updateCurrentPose()

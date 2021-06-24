@@ -61,6 +61,7 @@ public:
 
   BehaviorModuleOutput run(const std::shared_ptr<PlannerData> & data);
   std::vector<std::shared_ptr<behavior_path_planner::SceneModuleStatus>> getModulesStatus();
+  std::vector<visualization_msgs::MarkerArray> getDebugMarkers();
 
 private:
   BehaviorTreeManagerParam bt_manager_param_;

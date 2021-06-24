@@ -113,6 +113,15 @@ BehaviorTreeManager::getModulesStatus()
   return modules_status_;
 }
 
+std::vector<visualization_msgs::MarkerArray> BehaviorTreeManager::getDebugMarkers()
+{
+  std::vector<visualization_msgs::MarkerArray> data;
+  for (const auto & module : scene_modules_) {
+    data.push_back(module->getDebugMarker());
+  }
+  return data;
+}
+
 BT::NodeStatus BehaviorTreeManager::checkForceApproval(const std::string & name)
 {
   const auto & approval = current_planner_data_->approval.is_force_approved;

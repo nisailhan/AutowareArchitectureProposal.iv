@@ -50,10 +50,12 @@ namespace behavior_path_planner
 namespace util
 {
 std::vector<double> calcPathArcLengthArray(
-  const autoware_planning_msgs::PathWithLaneId & path, size_t start, size_t end);
+  const autoware_planning_msgs::PathWithLaneId & path, size_t start = 0,
+  size_t end = std::numeric_limits<size_t>::max());
 
 double calcPathArcLength(
-  const autoware_planning_msgs::PathWithLaneId & path, size_t start, size_t end);
+  const autoware_planning_msgs::PathWithLaneId & path, size_t start = 0,
+  size_t end = std::numeric_limits<size_t>::max());
 
 autoware_planning_msgs::PathWithLaneId resamplePathWithSpline(
   const autoware_planning_msgs::PathWithLaneId & path, double interval);

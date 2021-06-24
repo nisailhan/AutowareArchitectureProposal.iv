@@ -18,6 +18,7 @@
 
 #include "autoware_utils/autoware_utils.h"
 #include "behavior_path_planner/utilities.hpp"
+#include "behavior_path_planner/path_utilities.hpp"
 #include "spline_interpolation/spline_interpolation.h"
 
 namespace

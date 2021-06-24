@@ -39,6 +39,10 @@ add_executable(behavior_path_planner
   src/path_shifter/path_shifter.cpp
   src/turn_signal_decider.cpp
   src/scene_module/scene_module_bt_node_interface.cpp
+  src/scene_module/side_shift/side_shift_module.cpp
+  src/scene_module/side_shift/util.cpp
+  src/scene_module/avoidance/avoidance_module.cpp
+  src/scene_module/avoidance/debug.cpp
   src/scene_module/lane_following/lane_following_module.cpp
   src/scene_module/lane_change/lane_change_module.cpp
   src/scene_module/lane_change/util.cpp
