@@ -15,4 +15,12 @@
       Ground removal based on ransac plane extraction
     </description>
   </class>
+
+  <class name="pointcloud_preprocessor/scan_ground_filter_nodelet"
+         type="pointcloud_preprocessor::ScanGroundFilterNodelet"
+         base_class_type="nodelet::Nodelet">
+    <description>
+      Ground removal based on vertical and horizontal scan analysis
+    </description>
+  </class>
 </library>

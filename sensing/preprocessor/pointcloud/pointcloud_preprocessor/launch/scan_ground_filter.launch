@@ -1,0 +1,14 @@
+<launch>
+  <arg name ="~input/pointcloud" default="pointcloud" />
+  <arg name ="~output/pointcloud" default="no_ground/pointcloud" />
+  <arg name="manager" />
+
+  <node pkg="nodelet" type="nodelet" name="scan_ground_filter" args="load pointcloud_preprocessor/scan_ground_filter_nodelet $(arg manager)" output="screen">
+    <remap from="~input/pointcloud" to="$(arg ~input/pointcloud)" />
+    <remap from="~output/pointcloud" to="$(arg ~output/pointcloud)" />
+    <param name="global_slope_max" value="10.0" />
+    <param name="local_slope_max_angle" value="30.0" />
+    <param name="split_points_distance_tolerance" value="0.2" />
+    <param name="split_height_distance" value="0.2" />
+  </node>
+</launch>
