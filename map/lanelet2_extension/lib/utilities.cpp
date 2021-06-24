@@ -306,6 +306,46 @@ lanelet::ConstLineString3d getCenterlineWithOffset(
   return static_cast<lanelet::ConstLineString3d>(centerline);
 }
 
+lanelet::ConstLanelet getExpandedLanelet(
+  const lanelet::ConstLanelet & lanelet_obj, const double left_offset, const double right_offset)
+{
+  const auto & expanded_left_bound_2d =
+    lanelet::geometry::offset(lanelet_obj.leftBound2d().basicLineString(), left_offset);
+  const auto & expanded_right_bound_2d =
+    lanelet::geometry::offset(lanelet_obj.rightBound2d().basicLineString(), right_offset);
+
+  const auto toPoints3d = [](const lanelet::BasicLineString2d & ls2d, const double z) {
+    lanelet::Points3d output;
+    for (const auto & pt : ls2d) {
+      output.push_back(lanelet::Point3d(lanelet::InvalId, pt.x(), pt.y(), z));
+    }
+    return output;
+  };
+
+  // Original z value cannot be used directly since the offset function can vary the points size.
+  const lanelet::Points3d ex_lefts =
+    toPoints3d(expanded_left_bound_2d, lanelet_obj.leftBound3d().basicLineString().at(0).z());
+  const lanelet::Points3d ex_rights =
+    toPoints3d(expanded_right_bound_2d, lanelet_obj.rightBound3d().basicLineString().at(0).z());
+
+  const auto & extended_left_bound_3d = lanelet::LineString3d(lanelet::InvalId, ex_lefts);
+  const auto & expanded_right_bound_3d = lanelet::LineString3d(lanelet::InvalId, ex_rights);
+  const auto & lanelet =
+    lanelet::Lanelet(lanelet_obj.id(), extended_left_bound_3d, expanded_right_bound_3d);
+
+  return lanelet;
+}
+
+lanelet::ConstLanelets getExpandedLanelets(
+  const lanelet::ConstLanelets & lanelet_obj, const double left_offset, const double right_offset)
+{
+  lanelet::ConstLanelets llts;
+  for (const auto & llt : lanelet_obj) {
+    llts.push_back(getExpandedLanelet(llt, left_offset, right_offset));
+  }
+  return llts;
+}
+
 void overwriteLaneletsCenterline(
   lanelet::LaneletMapPtr lanelet_map, const double resolution, const bool force_overwrite)
 {

@@ -1,0 +1,12 @@
+<launch>
+  <node pkg="behavior_path_planner" type="behavior_path_planner" name="behavior_path_planner" output="screen">
+    <remap from="~input/route" to="$(arg input_route_topic_name)" />
+    <remap from="~input/vector_map" to="$(arg map_topic_name)" />
+    <remap from="~input/perception" to="/perception/object_recognition/objects" />
+    <remap from="~input/velocity" to="/localization/twist" />
+    <remap from="~output/path" to="path_with_lane_id" />
+
+    <rosparam command="load" file="$(find behavior_path_planner)/config/side_shift/side_shift.yaml" />
+    <param name="bt_tree_config_path" value="$(find behavior_path_planner)/config/behavior_path_planner_tree_v2.xml" />
+  </node>
+</launch>

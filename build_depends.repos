@@ -1,1 +1,7 @@
 repositories:
+  # behavior-tree-cpp-v3
+  behavior-tree-cpp-v3:
+    type: git
+    url: https://github.com/BehaviorTree/behaviortree_cpp_v3-release.git
+    version: release/melodic/behaviortree_cpp_v3/3.5.5-2
+

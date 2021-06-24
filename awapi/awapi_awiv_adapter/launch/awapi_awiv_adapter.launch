@@ -24,6 +24,9 @@
   <arg name="input_lane_change_available" default="/planning/scenario_planning/lane_driving/lane_change_available" />
   <arg name="input_lane_change_ready" default="/planning/scenario_planning/lane_driving/lane_change_ready" />
   <arg name="input_lane_change_candidate_path" default="/planning/scenario_planning/lane_driving/lane_change_candidate_path" />
+  <arg name="input_path_change_ready" default="/planning/scenario_planning/lane_driving/behavior_planning/behavior_path_planner/ready_module" />
+  <arg name="input_path_change_force_available" default="/planning/scenario_planning/lane_driving/behavior_planning/behavior_path_planner/force_available" />
+  <arg name="input_path_change_running" default="/planning/scenario_planning/lane_driving/behavior_planning/behavior_path_planner/running_modules" />
   <arg name="input_obstacle_avoid_ready" default="/planning/scenario_planning/lane_driving/obstacle_avoidance_ready" />
   <arg name="input_obstacle_avoid_candidate_path" default="/planning/scenario_planning/lane_driving/obstacle_avoidance_candidate_trajectory" />
   <arg name="input_route" default="/planning/mission_planning/route" />
@@ -52,6 +55,8 @@
   <arg name="output_route" default="/planning/mission_planning/route" />
   <arg name="output_lane_change_approval" default="/planning/scenario_planning/lane_driving/lane_change_approval" />
   <arg name="output_force_lane_change" default="/planning/scenario_planning/lane_driving/force_lane_change" />
+  <arg name="output_path_change_approval" default="/planning/scenario_planning/lane_driving/behavior_planning/behavior_path_planner/path_change_approval" />
+  <arg name="output_path_change_force" default="/planning/scenario_planning/lane_driving/behavior_planning/behavior_path_planner/path_change_force" />
   <arg name="output_obstacle_avoid_approval" default="/planning/scenario_planning/lane_driving/obstacle_avoidance_approval" />
   <arg name="output_door_control" default="/pacmod/as_rx/rear_pass_door_cmd" />
   <arg name="output_force_obstacle_avoid" default="tmp" /> <!-- not implemented -->
@@ -69,6 +74,8 @@
   <arg name="set_goal" default="autoware/put/goal" />
   <arg name="set_lane_change_approval" default="lane_change/put/approval" />
   <arg name="set_force_lane_change" default="lane_change/put/force" />
+  <arg name="set_path_change_approval" default="path_change/put/approval" />
+  <arg name="set_path_change_force" default="path_change/put/force" />
   <arg name="set_obstacle_avoid_approval" default="object_avoidance/put/approval" />
   <arg name="set_force_obstacle_avoid" default="object_avoidance/put/force" />
   <arg name="set_overwrite_traffic_light_state" default="traffic_light/put/traffic_light_status" />
@@ -85,6 +92,10 @@
   <arg name="get_stop_speed_exceeded" default="autoware/get/stop_speed_exceeded" />
   <arg name="get_traffic_light_status" default="traffic_light/get/status" />
   <arg name="get_nearest_traffic_light_status" default="traffic_light/get/nearest_traffic_light_status" />
+  <arg name="get_path_change_ready" default="path_change/get/ready_module" />
+  <arg name="get_path_change_force_available" default="path_change/get/force_available" />
+  <arg name="get_path_change_running" default="path_change/get/running_modules" />
+
 
   <group ns="awapi">
     <node pkg="awapi_awiv_adapter" type="awapi_awiv_adapter" name="awapi_awiv_adapter" output="$(arg adapter_output)">
@@ -156,6 +167,9 @@
     <node pkg="topic_tools" type="relay" name="predict_object_relay" args="$(arg input_object) $(arg get_predicted_object)" output="$(arg relay_output)" />
     <node pkg="topic_tools" type="relay" name="traffic_light_relay" args="$(arg input_traffic_light_state) $(arg get_traffic_light_status)" output="$(arg relay_output)" />
     <node pkg="topic_tools" type="relay" name="nearest_traffic_light_relay" args="$(arg input_nearest_traffic_light_state) $(arg get_nearest_traffic_light_status)" output="$(arg relay_output)" />
+    <node pkg="topic_tools" type="relay" name="ready_module_relay" args="$(arg input_path_change_ready) $(arg get_path_change_ready)" output="$(arg relay_output)" />
+    <node pkg="topic_tools" type="relay" name="force_available_relay" args="$(arg input_path_change_force_available) $(arg get_path_change_force_available)" output="$(arg relay_output)" />
+    <node pkg="topic_tools" type="relay" name="running_modules_relay" args="$(arg input_path_change_running) $(arg get_path_change_running)" output="$(arg relay_output)" />
 
     <!-- relay put topic -->
     <node pkg="topic_tools" type="relay" name="gate_mode_relay" args="$(arg set_gate_mode) $(arg output_gate_mode)" output="$(arg relay_output)" />
@@ -163,6 +177,8 @@
     <node pkg="topic_tools" type="relay" name="put_goal_relay" args="$(arg set_goal) $(arg output_goal)" output="$(arg relay_output)" />
     <node pkg="topic_tools" type="relay" name="lane_change_approval_relay" args="$(arg set_lane_change_approval) $(arg output_lane_change_approval)" output="$(arg relay_output)" />
     <node pkg="topic_tools" type="relay" name="force_lane_change_relay" args="$(arg set_force_lane_change) $(arg output_force_lane_change)" output="$(arg relay_output)" />
+    <node pkg="topic_tools" type="relay" name="external_approval" args="$(arg set_path_change_approval) $(arg output_path_change_approval)" output="$(arg relay_output)" />
+    <node pkg="topic_tools" type="relay" name="force_approval" args="$(arg set_path_change_force) $(arg output_path_change_force)" output="$(arg relay_output)" />
     <node pkg="topic_tools" type="relay" name="obstacle_avoid_approval_relay" args="$(arg set_obstacle_avoid_approval) $(arg output_obstacle_avoid_approval)" output="$(arg relay_output)" />
     <node pkg="topic_tools" type="relay" name="force_obstacle_avoid_relay" args="$(arg set_force_obstacle_avoid) $(arg output_force_obstacle_avoid)" output="$(arg relay_output)" />
     <node pkg="topic_tools" type="relay" name="overwrite_traffic_light_state_relay" args="$(arg set_overwrite_traffic_light_state) $(arg output_overwrite_traffic_light_state)" output="$(arg relay_output)" />

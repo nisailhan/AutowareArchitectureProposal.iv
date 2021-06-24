@@ -14,6 +14,9 @@ add_message_files(
   FILES
     LaneSequence.msg
     Path.msg
+    PathChangeModule.msg
+    PathChangeModuleArray.msg
+    PathChangeModuleId.msg
     PathPoint.msg
     PathWithLaneId.msg
     PathPointWithLaneId.msg

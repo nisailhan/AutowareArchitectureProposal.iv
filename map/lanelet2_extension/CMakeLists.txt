@@ -101,7 +101,7 @@ install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
 
 if(CATKIN_ENABLE_TESTING)
-  roslint_add_test()
+  # roslint_add_test()  # TODO(Horibe) enable lint
   find_package(rostest REQUIRED)
   add_rostest_gtest(message_conversion-test test/test_message_conversion.test test/src/test_message_conversion.cpp)
   target_link_libraries(message_conversion-test ${catkin_LIBRARIES} lanelet2_extension_lib)
