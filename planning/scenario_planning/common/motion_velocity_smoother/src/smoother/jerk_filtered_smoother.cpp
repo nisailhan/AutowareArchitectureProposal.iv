@@ -41,7 +41,8 @@ void JerkFilteredSmoother::setParam(const Param & smoother_param)
 
 bool JerkFilteredSmoother::apply(
   const double v0, const double a0, const autoware_planning_msgs::Trajectory & input,
-  autoware_planning_msgs::Trajectory & output)
+  autoware_planning_msgs::Trajectory & output,
+  std::vector<autoware_planning_msgs::Trajectory> & debug_trajectories)
 {
   output = input;
 
@@ -73,6 +74,12 @@ bool JerkFilteredSmoother::apply(
     backwardJerkFilter(input.points.back().twist.linear.x, 0.0, a_min, j_min, input);
   const auto filtered =
     mergeFilteredTrajectory(v0, a0, a_min, j_min, forward_filtered, backward_filtered);
+
+  // Set debug trajectories
+  debug_trajectories.resize(3);
+  debug_trajectories[0] = forward_filtered;
+  debug_trajectories[1] = backward_filtered;
+  debug_trajectories[2] = filtered;
 
   const size_t N = filtered.points.size();
 

@@ -163,6 +163,13 @@ private:
 
   bool isEngageStatus(const double target_vel) const;
 
+  void publishDebugTrajectories(
+    const std::vector<autoware_planning_msgs::Trajectory> & debug_trajectories) const;
+
+  void publishClosestVelocity(
+    const autoware_planning_msgs::Trajectory & trajectory, const geometry_msgs::Pose & current_pose,
+    const ros::Publisher & pub) const;
+
   // parameter handling
   Param getCommonParam() const;
 
@@ -194,5 +201,12 @@ private:
   ros::Publisher debug_closest_acc_;
   ros::Publisher debug_closest_jerk_;
   ros::Publisher debug_calculation_time_;
+  ros::Publisher debug_closest_max_velocity_;
+
+  // For Jerk Filtered Algorithm Debug
+  ros::Publisher pub_forward_filtered_trajectory_;
+  ros::Publisher pub_backward_filtered_trajectory_;
+  ros::Publisher pub_merged_filtered_trajectory_;
+  ros::Publisher pub_closest_merged_velocity_;
 };
 }  // namespace motion_velocity_smoother

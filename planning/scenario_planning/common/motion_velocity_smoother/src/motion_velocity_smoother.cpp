@@ -37,6 +37,16 @@ MotionVelocitySmoother::MotionVelocitySmoother() : nh_(""), pnh_("~"), tf_listen
       JerkFilteredSmoother::Param param = getJerkFilteredSmootherParam();
       smoother_ = std::make_shared<JerkFilteredSmoother>(param);
       smoother_->setParam(base_param);
+
+      // Set Publisher for jerk filtered algorithm
+      pub_forward_filtered_trajectory_ =
+        pnh_.advertise<autoware_planning_msgs::Trajectory>("debug/forward_filtered_trajectory", 1);
+      pub_backward_filtered_trajectory_ =
+        pnh_.advertise<autoware_planning_msgs::Trajectory>("debug/backward_filtered_trajectory", 1);
+      pub_merged_filtered_trajectory_ =
+        pnh_.advertise<autoware_planning_msgs::Trajectory>("debug/merged_filtered_trajectory", 1);
+      pub_closest_merged_velocity_ =
+        pnh_.advertise<std_msgs::Float32>("closest_merged_velocity", 1);
       break;
     }
     case AlgorithmType::L2: {
@@ -77,6 +87,7 @@ MotionVelocitySmoother::MotionVelocitySmoother() : nh_(""), pnh_("~"), tf_listen
   debug_closest_velocity_ = pnh_.advertise<std_msgs::Float32>("closest_velocity", 1);
   debug_closest_acc_ = pnh_.advertise<std_msgs::Float32>("closest_acceleration", 1);
   debug_closest_jerk_ = pnh_.advertise<std_msgs::Float32>("closest_jerk", 1);
+  debug_closest_max_velocity_ = pnh_.advertise<std_msgs::Float32>("closest_max_velocity", 1);
   debug_calculation_time_ = pnh_.advertise<std_msgs::Float32>("calculation_time", 1);
   pub_trajectory_raw_ =
     pnh_.advertise<autoware_planning_msgs::Trajectory>("debug/trajectory_raw", 1);
@@ -494,6 +505,9 @@ bool MotionVelocitySmoother::smoothVelocity(
     traj_resampled->points.back().twist.linear.x = 0.0;
   }
 
+  // Publish Closest Resample Trajectory Velocity
+  publishClosestVelocity(*traj_resampled, current_pose_ptr_->pose, debug_closest_max_velocity_);
+
   // Calculate initial motion for smoothing
   double initial_vel;
   double initial_acc;
@@ -514,13 +528,26 @@ bool MotionVelocitySmoother::smoothVelocity(
     clipped.points.end(), traj_resampled->points.begin() + *traj_resampled_closest,
     traj_resampled->points.end());
 
-  if (!smoother_->apply(initial_vel, initial_acc, clipped, traj_smoothed)) {
+  std::vector<autoware_planning_msgs::Trajectory> debug_trajectories;
+  if (!smoother_->apply(initial_vel, initial_acc, clipped, traj_smoothed, debug_trajectories)) {
     ROS_WARN("[MotionVelocitySmoother] fail to solve optimization.");
   }
 
   traj_smoothed.points.insert(
     traj_smoothed.points.begin(), traj_resampled->points.begin(),
     traj_resampled->points.begin() + *traj_resampled_closest);
+
+  if (!debug_trajectories.empty()) {
+    for (auto & debug_trajectory : debug_trajectories) {
+      debug_trajectory.points.insert(
+        debug_trajectory.points.begin(), traj_resampled->points.begin(),
+        traj_resampled->points.begin() + *traj_resampled_closest);
+      for (size_t i = 0; i < debug_trajectory.points.size(); ++i) {
+        debug_trajectory.points.at(i).twist.linear.x =
+          debug_trajectory.points.at(*traj_resampled_closest).twist.linear.x;
+      }
+    }
+  }
 
   // Set 0 velocity after input-stop-point
   overwriteStopPoint(*traj_resampled, traj_smoothed);
@@ -543,6 +570,7 @@ bool MotionVelocitySmoother::smoothVelocity(
   if (publish_debug_trajs_) {
     pub_trajectory_latacc_filtered_.publish(*traj_lateral_acc_filtered);
     pub_trajectory_resampled_.publish(*traj_resampled);
+    publishDebugTrajectories(debug_trajectories);
   }
 
   return true;
@@ -749,6 +777,36 @@ void MotionVelocitySmoother::applyStopApproachingVelocity(
       traj.points.at(i).twist.linear.x = node_param_.stopping_velocity;
     }
   }
+}
+
+void MotionVelocitySmoother::publishDebugTrajectories(
+  const std::vector<autoware_planning_msgs::Trajectory> & debug_trajectories) const
+{
+  if (node_param_.algorithm_type == AlgorithmType::JERK_FILTERED) {
+    if (debug_trajectories.size() != 3) {
+      ROS_WARN("[MotionVelocitySmoother] Size of the debug trajectories is incorrect");
+      return;
+    }
+    pub_forward_filtered_trajectory_.publish(debug_trajectories[0]);
+    pub_backward_filtered_trajectory_.publish(debug_trajectories[1]);
+    pub_merged_filtered_trajectory_.publish(debug_trajectories[2]);
+    publishClosestVelocity(
+      debug_trajectories[2], current_pose_ptr_->pose, pub_closest_merged_velocity_);
+  }
+
+  return;
+}
+
+void MotionVelocitySmoother::publishClosestVelocity(
+  const autoware_planning_msgs::Trajectory & trajectory, const geometry_msgs::Pose & current_pose,
+  const ros::Publisher & pub) const
+{
+  const auto closest_point =
+    trajectory_utils::calcInterpolatedTrajectoryPoint(trajectory, current_pose);
+
+  std_msgs::Float32 vel_data;
+  vel_data.data = std::max(closest_point.twist.linear.x, 0.0);
+  pub.publish(vel_data);
 }
 
 void MotionVelocitySmoother::publishClosestState(

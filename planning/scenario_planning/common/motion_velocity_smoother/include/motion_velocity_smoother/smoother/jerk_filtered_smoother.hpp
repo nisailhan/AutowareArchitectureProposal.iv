@@ -44,8 +44,8 @@ public:
 
   bool apply(
     const double initial_vel, const double initial_acc,
-    const autoware_planning_msgs::Trajectory & input,
-    autoware_planning_msgs::Trajectory & output) override;
+    const autoware_planning_msgs::Trajectory & input, autoware_planning_msgs::Trajectory & output,
+    std::vector<autoware_planning_msgs::Trajectory> & debug_trajectories) override;
 
   void setParam(const Param & param);
 

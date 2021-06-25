@@ -40,7 +40,8 @@ void L2PseudoJerkSmoother::setParam(const Param & smoother_param)
 
 bool L2PseudoJerkSmoother::apply(
   const double initial_vel, const double initial_acc,
-  const autoware_planning_msgs::Trajectory & input, autoware_planning_msgs::Trajectory & output)
+  const autoware_planning_msgs::Trajectory & input, autoware_planning_msgs::Trajectory & output,
+  std::vector<autoware_planning_msgs::Trajectory> & debug_trajectories)
 {
   const auto ts = std::chrono::system_clock::now();
 
