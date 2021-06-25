@@ -636,7 +636,8 @@ PathWithLaneId removeOverlappingPoints(const PathWithLaneId & input_path)
 
     constexpr double min_dist = 0.001;
     if (autoware_utils::calcDistance3d(filtered_path.points.back().point, pt.point) < min_dist) {
-      filtered_path.points.back().lane_ids.push_back(pt.lane_ids.front());
+      filtered_path.points.back().point.twist.linear.x =
+        std::min(pt.point.twist.linear.x, filtered_path.points.back().point.twist.linear.x);
     } else {
       filtered_path.points.push_back(pt);
     }
