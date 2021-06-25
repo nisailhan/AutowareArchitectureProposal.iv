@@ -367,6 +367,10 @@ void MotionVelocitySmoother::onCurrentTrajectory(
 
   // calculate trajectory velocity
   autoware_planning_msgs::Trajectory output = calcTrajectoryVelocity(*base_traj_raw_ptr_);
+  if (output.points.empty()) {
+    ROS_WARN("[MotionVelocitySmoother] Output Point is empty");
+    return;
+  }
 
   // Get the nearest point
   const auto output_closest = autoware_utils::findNearestIndex(
