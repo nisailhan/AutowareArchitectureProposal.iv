@@ -276,7 +276,16 @@ void BehaviorPathPlanner::run(const ros::TimerEvent & event)
   const auto path_candidate = getPathCandidate(output);
   planner_data_->prev_output_path = path;
 
-  path_publisher_.publish(clipPathByGoal(*path));
+  const auto clipped_path = clipPathByGoal(*path);
+
+  // TODO(Horibe) the path must have points. Needs to be fix.
+  if (!clipped_path.points.empty()) {
+    path_publisher_.publish(clipped_path);
+  } else {
+    ROS_ERROR(
+      "behavior path output is empty! Stop publish. path = %lu, clipped = %lu", path->points.size(),
+      clipped_path.points.size());
+  }
   path_candidate_publisher_.publish(util::toPath(*path_candidate));
   // debug_path_publisher_.publish(util::toPath(path));
   debug_drivable_area_publisher_.publish(path->drivable_area);
