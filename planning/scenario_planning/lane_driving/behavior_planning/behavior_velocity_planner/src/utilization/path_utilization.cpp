@@ -33,7 +33,7 @@ autoware_planning_msgs::Path interpolatePath(
   std::vector<double> z, z_interp;
   std::vector<double> v, v_interp;
   std::vector<double> s_in, s_out;
-  if (200 < path.points.size())
+  if (2000 < path.points.size())
     ROS_WARN(
       "because path size is too large, calculation cost is high. size is %d.",
       (int)path.points.size());
