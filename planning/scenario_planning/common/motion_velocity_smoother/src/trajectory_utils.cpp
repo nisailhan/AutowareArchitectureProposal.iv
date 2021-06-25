@@ -388,8 +388,8 @@ bool calcStopDistWithJerkConstraints(
     case AccelerationType::TRIANGLE: {
       /*
           v_error = v_diff_from_a0_to_zero + v_diff_from_zero_to_a1 + v_diff_from_a1_to_zero,
-          where v_diff_from_zero_to_a1 = 1/2 * ((a1 - 0.0) / jerk_dec) * a1, v_diff_from_a1_to_zero = 1/2 * ((0.0 - a1) / jerk_acc) * a1.
-          Thus a1^2 = (v_error - v_diff_from_a0_to_zero) * 2 * 1.0 / (1.0 / jerk_dec - 1.0 / jerk_acc).
+          where v_diff_from_zero_to_a1 = 1/2 * ((a1 - 0.0) / jerk_dec) * a1, v_diff_from_a1_to_zero = 1/2 * ((0.0 - a1)
+         / jerk_acc) * a1. Thus a1^2 = (v_error - v_diff_from_a0_to_zero) * 2 * 1.0 / (1.0 / jerk_dec - 1.0 / jerk_acc).
         */
       const double v_error = target_vel - v0;
       const double v_diff_from_a0_to_zero = 0.5 * calculateTime(a0, 0.0, jerk_dec) * a0;
@@ -568,7 +568,7 @@ boost::optional<autoware_planning_msgs::Trajectory> applyDecelFilterWithJerkCons
 boost::optional<std::tuple<double, double, double, double>> updateStateWithJerkConstraint(
   const double v0, const double a0, const std::map<double, double> & jerk_profile, const double t)
 {
-  //constexpr double eps = 1.0E-05;
+  // constexpr double eps = 1.0E-05;
   double j = 0.0;
   double a = a0;
   double v = v0;

@@ -30,12 +30,23 @@ extract_ahead_dist: 200.0         # forward trajectory distance used for plannin
 extract_behind_dist: 5.0          # backward trajectory distance used for planning [m]
 delta_yaw_threshold: 1.0472       # Allowed delta yaw between ego pose and trajectory pose [radian]
 
-# resampling parameters
-max_trajectory_length: 200.0          # max trajectory length for resampling [m]
-min_trajectory_length: 150.0           # min trajectory length for resampling [m]
-resample_time: 5.0                   # resample total time [s]
-resample_dt: 0.1                      # resample time interval [s]
-min_trajectory_interval_distance: 0.1 # resample points-interval length [m]
+# resampling parameters for optimization
+max_trajectory_length: 200.0        # max trajectory length for resampling [m]
+min_trajectory_length: 150.0        # min trajectory length for resampling [m]
+resample_time: 5.0                  # resample total time for dense sampling [s]
+dense_dt: 0.1                       # resample time interval for dense sampling [s]
+dense_min_interval_distance: 0.1    # minimum points-interval length for dense sampling [m]
+sparse_dt: 0.5                      # resample time interval for sparse sampling [s]
+sparse_min_interval_distance: 4.0   # minimum points-interval length for sparse sampling [m]
+
+# resampling parameters for post process
+post_max_trajectory_length: 300.0        # max trajectory length for resampling [m]
+post_min_trajectory_length: 30.0        # min trajectory length for resampling [m]
+post_resample_time: 10.0                 # resample total time for dense sampling [s]
+post_dense_dt: 0.1                       # resample time interval for dense sampling [s]
+post_dense_min_interval_distance: 0.1    # minimum points-interval length for dense sampling [m]
+post_sparse_dt: 0.1                      # resample time interval for sparse sampling [s]
+post_sparse_min_interval_distance: 1.0   # minimum points-interval length for sparse sampling [m]
 
 # system
 over_stop_velocity_warn_thr: 1.389  # used to check if the optimization exceeds the input velocity on the stop point

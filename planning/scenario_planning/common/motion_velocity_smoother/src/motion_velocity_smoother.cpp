@@ -12,7 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
+ */
 
 #include "motion_velocity_smoother/motion_velocity_smoother.hpp"
 #include <chrono>
@@ -27,7 +27,8 @@ MotionVelocitySmoother::MotionVelocitySmoother() : nh_(""), pnh_("~"), tf_listen
 {
   // set common params
   node_param_ = getCommonParam();
-  pnh_.param<double>("over_stop_velocity_warn_thr", over_stop_velocity_warn_thr_, autoware_utils::kmph2mps(5.0));
+  pnh_.param<double>(
+    "over_stop_velocity_warn_thr", over_stop_velocity_warn_thr_, autoware_utils::kmph2mps(5.0));
 
   // create smoother
   SmootherBase::BaseParam base_param = getSmootherBaseParam();
@@ -125,11 +126,13 @@ void MotionVelocitySmoother::onDynamicReconfigure(
     p.min_curve_velocity = config.min_curve_velocity;
     p.decel_distance_before_curve = config.decel_distance_before_curve;
     p.decel_distance_after_curve = config.decel_distance_after_curve;
-    p.resample_time = config.resample_time;
-    p.resample_dt = config.resample_dt;
-    p.max_trajectory_length = config.max_trajectory_length;
-    p.min_trajectory_length = config.min_trajectory_length;
-    p.min_trajectory_interval_distance = config.min_trajectory_interval_distance;
+    p.resample_param.max_trajectory_length = config.max_trajectory_length;
+    p.resample_param.min_trajectory_length = config.min_trajectory_length;
+    p.resample_param.resample_time = config.resample_time;
+    p.resample_param.dense_resample_dt = config.dense_resample_dt;
+    p.resample_param.dense_min_interval_distance = config.dense_min_interval_distance;
+    p.resample_param.sparse_resample_dt = config.sparse_resample_dt;
+    p.resample_param.sparse_min_interval_distance = config.sparse_min_interval_distance;
     smoother_->setParam(p);
   }
 
@@ -181,6 +184,17 @@ MotionVelocitySmoother::Param MotionVelocitySmoother::getCommonParam() const
   pnh_.param<double>("extract_behind_dist", p.extract_behind_dist, 3.0);
   pnh_.param<double>("stop_dist_to_prohibit_engage", p.stop_dist_to_prohibit_engage, 1.5);
   pnh_.param<double>("delta_yaw_threshold", p.delta_yaw_threshold, M_PI / 3.0);
+  pnh_.param<double>(
+    "post_max_trajectory_length", p.post_resample_param.max_trajectory_length, 300.0);
+  pnh_.param<double>(
+    "post_min_trajectory_length", p.post_resample_param.min_trajectory_length, 30.0);
+  pnh_.param<double>("post_resample_time", p.post_resample_param.resample_time, 10.0);
+  pnh_.param<double>("post_dense_resample_dt", p.post_resample_param.dense_resample_dt, 0.1);
+  pnh_.param<double>(
+    "post_dense_min_interval_distance", p.post_resample_param.dense_min_interval_distance, 0.1);
+  pnh_.param<double>("post_sparse_resample_dt", p.post_resample_param.sparse_resample_dt, 0.1);
+  pnh_.param<double>(
+    "post_sparse_min_interval_distance", p.post_resample_param.sparse_min_interval_distance, 1.0);
 
   {
     std::string algorithm_name;
@@ -201,12 +215,17 @@ SmootherBase::BaseParam MotionVelocitySmoother::getSmootherBaseParam() const
   pnh_.param<double>("decel_distance_before_curve", base_param.decel_distance_before_curve, 3.5);
   pnh_.param<double>("decel_distance_after_curve", base_param.decel_distance_after_curve, 0.0);
   pnh_.param<double>("min_curve_velocity", base_param.min_curve_velocity, 1.38);
-  pnh_.param<double>("max_trajectory_length", base_param.max_trajectory_length, 200.0);
-  pnh_.param<double>("min_trajectory_length", base_param.min_trajectory_length, 30.0);
-  pnh_.param<double>("resample_time", base_param.resample_time, 10.0);
-  pnh_.param<double>("resample_dt", base_param.resample_dt, 0.1);
   pnh_.param<double>(
-    "min_trajectory_interval_distance", base_param.min_trajectory_interval_distance, 0.1);
+    "max_trajectory_length", base_param.resample_param.max_trajectory_length, 200.0);
+  pnh_.param<double>(
+    "min_trajectory_length", base_param.resample_param.min_trajectory_length, 30.0);
+  pnh_.param<double>("resample_time", base_param.resample_param.resample_time, 10.0);
+  pnh_.param<double>("dense_resample_dt", base_param.resample_param.dense_resample_dt, 0.1);
+  pnh_.param<double>(
+    "dense_min_interval_distance", base_param.resample_param.dense_min_interval_distance, 0.1);
+  pnh_.param<double>("sparse_resample_dt", base_param.resample_param.sparse_resample_dt, 0.5);
+  pnh_.param<double>(
+    "sparse_min_interval_distance", base_param.resample_param.sparse_min_interval_distance, 4.0);
   return base_param;
 }
 
@@ -254,7 +273,8 @@ void MotionVelocitySmoother::onExternalVelocityLimit(const std_msgs::Float32::Co
   constexpr double eps = 1.0E-04;
   const double margin = node_param_.margin_to_insert_external_velocity_limit;
 
-  // calculate distance and maximum velocity to decelerate to external velocity limit with jerk and acceleration constraints
+  // calculate distance and maximum velocity to decelerate to external velocity limit with jerk and acceleration
+  // constraints
   if (!prev_output_.points.empty()) {
     // if external velocity limit decreases
     if ((external_velocity_limit_ - msg->data) > eps) {
@@ -337,20 +357,37 @@ void MotionVelocitySmoother::onCurrentTrajectory(
   // calculate trajectory velocity
   autoware_planning_msgs::Trajectory output = calcTrajectoryVelocity(*base_traj_raw_ptr_);
 
-  // publish message
-  output.header = base_traj_raw_ptr_->header;
-  publishTrajectory(output);
-
-  // publish debug message
+  // Get the nearest point
   const auto output_closest = autoware_utils::findNearestIndex(
     output.points, current_pose_ptr_->pose, node_param_.delta_yaw_threshold);
   const auto output_closest_point =
     trajectory_utils::calcInterpolatedTrajectoryPoint(output, current_pose_ptr_->pose);
-
-  if (output_closest) {
-    publishStopDistance(output, *output_closest);
-    publishClosestState(output_closest_point);
+  if (!output_closest) {
+    ROS_WARN("[MotionVelocitySmoother] Cannot find closest waypoint for output trajectory");
+    return;
   }
+
+  // Resample the optimized trajectory
+  auto output_resampled = resampling::resampleTrajectory(
+    output, current_velocity_ptr_->twist.linear.x, *output_closest,
+    node_param_.post_resample_param);
+  if (!output_resampled) {
+    ROS_WARN("[MotionVelocitySmoother] Failed to get the resampled output trajectory");
+    return;
+  }
+
+  // Set 0 at the end of the trajectory
+  if (!output_resampled->points.empty()) {
+    output_resampled->points.back().twist.linear.x = 0.0;
+  }
+
+  // publish message
+  output_resampled->header = base_traj_raw_ptr_->header;
+  publishTrajectory(*output_resampled);
+
+  // publish debug message
+  publishStopDistance(output, *output_closest);
+  publishClosestState(output_closest_point);
 
   prev_output_ = output;
   prev_closest_point_ = output_closest_point;
@@ -383,7 +420,8 @@ autoware_planning_msgs::Trajectory MotionVelocitySmoother::calcTrajectoryVelocit
     traj_input, *input_closest, node_param_.extract_ahead_dist, node_param_.extract_behind_dist);
   if (!traj_extracted) return prev_output_;
 
-  // Smoother can not handle negative velocity, so multiple -1 to velocity if any trajectory points have reverse velocity
+  // Smoother can not handle negative velocity, so multiple -1 to velocity if any trajectory points have reverse
+  // velocity
   const bool is_reverse = std::any_of(
     traj_extracted->points.begin(), traj_extracted->points.end(),
     [](auto & pt) { return pt.twist.linear.x < 0; });
@@ -451,6 +489,11 @@ bool MotionVelocitySmoother::smoothVelocity(
     return false;
   }
 
+  // Set 0[m/s] in the terminal point
+  if (!traj_resampled->points.empty()) {
+    traj_resampled->points.back().twist.linear.x = 0.0;
+  }
+
   // Calculate initial motion for smoothing
   double initial_vel;
   double initial_acc;
@@ -501,6 +544,7 @@ bool MotionVelocitySmoother::smoothVelocity(
     pub_trajectory_latacc_filtered_.publish(*traj_lateral_acc_filtered);
     pub_trajectory_resampled_.publish(*traj_resampled);
   }
+
   return true;
 }
 

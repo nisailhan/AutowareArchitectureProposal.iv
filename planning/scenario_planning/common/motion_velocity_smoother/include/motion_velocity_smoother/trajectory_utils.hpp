@@ -86,5 +86,6 @@ boost::optional<autoware_planning_msgs::Trajectory> applyDecelFilterWithJerkCons
 
 boost::optional<std::tuple<double, double, double, double>> updateStateWithJerkConstraint(
   const double v0, const double a0, const std::map<double, double> & jerk_profile, const double t);
+
 }  // namespace trajectory_utils
 }  // namespace motion_velocity_smoother

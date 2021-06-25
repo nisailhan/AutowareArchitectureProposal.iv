@@ -37,6 +37,7 @@
 #include "osqp_interface/osqp_interface.h"
 
 #include "motion_velocity_smoother/MotionVelocitySmootherConfig.h"
+#include "motion_velocity_smoother/resample.hpp"
 #include "motion_velocity_smoother/smoother/jerk_filtered_smoother.hpp"
 #include "motion_velocity_smoother/smoother/l2_pseudo_jerk_smoother.hpp"
 #include "motion_velocity_smoother/smoother/linf_pseudo_jerk_smoother.hpp"
@@ -71,7 +72,8 @@ private:
 
   autoware_planning_msgs::Trajectory prev_output_;  // previously published trajectory
   boost::optional<autoware_planning_msgs::TrajectoryPoint> prev_closest_point_ =
-    {};  // previous trajectory point closest to ego vehicle
+    {};  // previous trajectory point
+         // closest to ego vehicle
 
   autoware_utils::SelfPoseListener self_pose_listener_;
 
@@ -103,7 +105,8 @@ private:
     double extract_behind_dist;   // backward waypoints distance from current position [m]
     double stop_dist_to_prohibit_engage;  // prevent to move toward close stop point
     double delta_yaw_threshold;           // for closest index calculation
-    AlgorithmType algorithm_type;         // Option : JerkFiltered, Linf, L2
+    resampling::ResampleParam post_resample_param;
+    AlgorithmType algorithm_type;  // Option : JerkFiltered, Linf, L2
   };
 
   std::shared_ptr<SmootherBase> smoother_;

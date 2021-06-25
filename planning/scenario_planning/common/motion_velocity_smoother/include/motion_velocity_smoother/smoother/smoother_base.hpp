@@ -26,6 +26,9 @@
 #include "autoware_utils/geometry/geometry.h"
 #include "autoware_utils/trajectory/trajectory.h"
 
+#include "motion_velocity_smoother/resample.hpp"
+#include "motion_velocity_smoother/trajectory_utils.hpp"
+
 namespace motion_velocity_smoother
 {
 class SmootherBase
@@ -41,11 +44,7 @@ public:
     double min_curve_velocity;           // min velocity at curve [m/s]
     double decel_distance_before_curve;  // distance before slow down for lateral acc at a curve
     double decel_distance_after_curve;   // distance after slow down for lateral acc at a curve
-    double max_trajectory_length;        // max length of the objective trajectory for resample
-    double min_trajectory_length;        // min length of the objective trajectory for resample
-    double resample_time;                // max time to calculate trajectory length
-    double resample_dt;                  // dt to calculate trajectory length
-    double min_trajectory_interval_distance;  // for resampling
+    resampling::ResampleParam resample_param;
   };
 
   virtual ~SmootherBase() = default;

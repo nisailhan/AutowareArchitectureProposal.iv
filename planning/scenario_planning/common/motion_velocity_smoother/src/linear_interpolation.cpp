@@ -85,10 +85,11 @@ boost::optional<std::vector<double>> interpolate(
     }
 
     const double value =
-      (dist_to_backward * sample_value.at(i) + dist_to_forward * sample_value.at(i - 1)) / dist_base_idx;
+      (dist_to_backward * sample_value.at(i) + dist_to_forward * sample_value.at(i - 1)) /
+      dist_base_idx;
     query_value.push_back(value);
   }
   return query_value;
 }
-}  // namespace linear_interpolate
+}  // namespace linear_interpolation
 }  // namespace motion_velocity_smoother

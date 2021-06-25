@@ -46,6 +46,7 @@ set(MOTION_VELOCITY_SMOOTHER_SRC
   src/motion_velocity_smoother.cpp
   src/trajectory_utils.cpp
   src/linear_interpolation.cpp
+  src/resample.cpp
 )
 
 set(SMOOTHER_SRC
