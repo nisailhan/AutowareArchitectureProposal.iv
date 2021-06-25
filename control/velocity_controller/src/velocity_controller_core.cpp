@@ -181,7 +181,7 @@ void VelocityController::callbackCurrentVelocity(const geometry_msgs::TwistStamp
 void VelocityController::callbackTrajectory(const autoware_planning_msgs::TrajectoryConstPtr & msg)
 {
   if (!velocity_controller_utils::isValidTrajectory(*msg)) {
-    ROS_ERROR("[velocity_controller] received invalid trajectory. ignore.");
+    ROS_ERROR_THROTTLE(3.0, "[velocity_controller] received invalid trajectory. ignore.");
     return;
   }
   trajectory_ptr_ = std::make_shared<autoware_planning_msgs::Trajectory>(*msg);
@@ -253,12 +253,6 @@ void VelocityController::callbackTimerControl(const ros::TimerEvent & event)
 {
   // wait for initial pointers
   if (!current_vel_ptr_ || !prev_vel_ptr_ || !trajectory_ptr_) {
-    return;
-  }
-
-  // when trajectory is empty
-  if (trajectory_ptr_->points.empty()) {
-    ROS_ERROR("[velocity_controller] Trajectory is empty.");
     return;
   }
 
@@ -337,7 +331,7 @@ VelocityController::Motion VelocityController::calcEmergencyCtrlCmd(const double
   const double vel = applyDiffLimitFilter(p.vel, prev_ctrl_cmd_.vel, dt, p.acc);
   const double acc = applyDiffLimitFilter(p.acc, prev_ctrl_cmd_.acc, dt, p.jerk);
 
-  ROS_ERROR("[Emergency stop] vel: %3.3f, acc: %3.3f", vel, acc);
+  ROS_WARN_THROTTLE(3.0, "[Emergency stop] vel: %3.3f, acc: %3.3f", vel, acc);
 
   return Motion{vel, acc};
 }

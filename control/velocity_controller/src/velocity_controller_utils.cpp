@@ -32,6 +32,12 @@ bool isValidTrajectory(const autoware_planning_msgs::Trajectory & traj)
       return false;
     }
   }
+
+  // when trajectory is empty
+  if (traj.points.empty()) {
+    return false;
+  }
+
   return true;
 }
 
