@@ -74,12 +74,11 @@ struct FrenetCoordinate3d
 std::vector<geometry_msgs::Point> convertToPointArray(
   const autoware_planning_msgs::PathWithLaneId & path);
 
-double normalizeRadian(const double radian);
 double l2Norm(const geometry_msgs::Vector3 vector);
 
-Eigen::Vector3d convertToEigenPt(const geometry_msgs::Point geom_pt);
 std::vector<geometry_msgs::Point> convertToGeometryPointArray(
   const autoware_planning_msgs::PathWithLaneId & path);
+
 geometry_msgs::PoseArray convertToGeometryPoseArray(
   const autoware_planning_msgs::PathWithLaneId & path);
 
@@ -87,6 +86,7 @@ autoware_perception_msgs::PredictedPath convertToPredictedPath(
   const autoware_planning_msgs::PathWithLaneId & path, const geometry_msgs::Twist & vehicle_twist,
   const geometry_msgs::Pose & vehicle_pose, const double duration, const double resolution,
   const double acceleration);
+
 autoware_perception_msgs::PredictedPath resamplePredictedPath(
   const autoware_perception_msgs::PredictedPath & input_path, const double resolution,
   const double duration);
@@ -104,15 +104,10 @@ geometry_msgs::Pose lerpByPose(
 
 geometry_msgs::Point lerpByLength(
   const std::vector<geometry_msgs::Point> & array, const double length);
+
 bool lerpByTimeStamp(
   const autoware_perception_msgs::PredictedPath & path, const ros::Time & t,
   geometry_msgs::Pose * lerped_pt);
-
-double getDistance2d(const geometry_msgs::Pose & p1, const geometry_msgs::Pose & p2);
-double getDistance2d(
-  const autoware_planning_msgs::PathPointWithLaneId & p1,
-  const autoware_planning_msgs::PathPointWithLaneId & p2);
-double getDistance3d(const geometry_msgs::Point & p1, const geometry_msgs::Point & p2);
 
 double getDistanceBetweenPredictedPaths(
   const autoware_perception_msgs::PredictedPath & path1,
@@ -171,9 +166,11 @@ double getDistanceToEndOfLane(
 
 double getDistanceToNextIntersection(
   const geometry_msgs::Pose & current_pose, const lanelet::ConstLanelets & lanelets);
+
 double getDistanceToCrosswalk(
   const geometry_msgs::Pose & current_pose, const lanelet::ConstLanelets & lanelets,
   const lanelet::routing::RoutingGraphContainer & overall_graphs);
+
 double getSignedDistance(
   const geometry_msgs::Pose & current_pose, const geometry_msgs::Pose & goal_pose,
   const lanelet::ConstLanelets & lanelets);
@@ -217,15 +214,13 @@ cv::Point toCVPoint(
   const geometry_msgs::Point & geom_point, const double width_m, const double height_m,
   const double resolution);
 
-// TODO(Horibe) template?
-std::vector<double> rangeVector(double start, double diff, double end);
-
 // TODO(Horibe) There is a similar function in route_handler. Check.
 std::shared_ptr<autoware_planning_msgs::PathWithLaneId> generateCenterLinePath(
   const std::shared_ptr<const PlannerData> & planner_data);
 
 autoware_perception_msgs::DynamicObjectArray filterObjectsByVelocity(
   const autoware_perception_msgs::DynamicObjectArray & objects, double lim_v);
+
 autoware_perception_msgs::DynamicObjectArray filterObjectsByVelocity(
   const autoware_perception_msgs::DynamicObjectArray & objects, double min_v, double max_v);
 

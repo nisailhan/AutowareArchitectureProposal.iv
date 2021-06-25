@@ -84,7 +84,7 @@ double calcPathArcLength(const PathWithLaneId & path, size_t start, size_t end)
 PathWithLaneId resamplePathWithSpline(const PathWithLaneId & path, double interval)
 {
   const auto base_points = calcPathArcLengthArray(path);
-  const auto sampling_points = rangeVector(0.0, interval, base_points.back());
+  const auto sampling_points = autoware_utils::arange(0.0, base_points.back(), interval);
 
   if (base_points.empty() || sampling_points.empty()) return path;
 

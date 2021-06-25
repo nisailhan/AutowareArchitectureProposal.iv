@@ -552,7 +552,7 @@ bool LaneChangeModule::isAbortConditionSatisfied() const
     const double lane_angle =
       lanelet::utils::getLaneletAngle(closest_lanelet, current_pose.position);
     const double vehicle_yaw = tf2::getYaw(current_pose.orientation);
-    const double yaw_diff = util::normalizeRadian(lane_angle - vehicle_yaw);
+    const double yaw_diff = autoware_utils::normalizeRadian(lane_angle - vehicle_yaw);
     is_angle_diff_small = std::abs(yaw_diff) < parameters_.abort_lane_change_angle_thresh;
   }
 

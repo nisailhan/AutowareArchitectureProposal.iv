@@ -69,26 +69,9 @@ std::vector<geometry_msgs::Point> convertToPointArray(
   return point_array;
 }
 
-double normalizeRadian(const double radian)
-{
-  double normalized = radian;
-  while (normalized > M_PI) {
-    normalized -= (2 * M_PI);
-  }
-  while (normalized < -M_PI) {
-    normalized += 2 * M_PI;
-  }
-  return normalized;
-}
-
 double l2Norm(const geometry_msgs::Vector3 vector)
 {
   return std::sqrt(std::pow(vector.x, 2) + std::pow(vector.y, 2) + std::pow(vector.z, 2));
-}
-
-Eigen::Vector3d convertToEigenPt(const geometry_msgs::Point geom_pt)
-{
-  return Eigen::Vector3d(geom_pt.x, geom_pt.y, geom_pt.z);
 }
 
 bool convertToFrenetCoordinate3d(
@@ -108,7 +91,7 @@ bool convertToFrenetCoordinate3d(
     return false;
   }
 
-  const auto search_pt = convertToEigenPt(search_point_geom);
+  const auto search_pt = autoware_utils::fromMsg(search_point_geom);
   bool found = false;
   double min_distance = std::numeric_limits<double>::max();
 
@@ -119,11 +102,11 @@ bool convertToFrenetCoordinate3d(
 
     for (std::size_t i = 0; i < linestring.size(); i++) {
       const auto geom_pt = linestring.at(i);
-      const auto current_pt = convertToEigenPt(geom_pt);
+      const auto current_pt = autoware_utils::fromMsg(geom_pt);
       const auto current2search_pt = (search_pt - current_pt);
       // update accumulated length
       if (i != 0) {
-        const auto p1 = convertToEigenPt(linestring.at(i - 1));
+        const auto p1 = autoware_utils::fromMsg(linestring.at(i - 1));
         const auto p2 = current_pt;
         accumulated_length += (p2 - p1).norm();
       }
@@ -144,8 +127,8 @@ bool convertToFrenetCoordinate3d(
     auto prev_geom_pt = linestring.front();
     double accumulated_length = 0;
     for (const auto & geom_pt : linestring) {
-      const auto start_pt = convertToEigenPt(prev_geom_pt);
-      const auto end_pt = convertToEigenPt(geom_pt);
+      const auto start_pt = autoware_utils::fromMsg(prev_geom_pt);
+      const auto end_pt = autoware_utils::fromMsg(geom_pt);
 
       const auto line_segment = end_pt - start_pt;
       const double line_segment_length = line_segment.norm();
@@ -325,7 +308,7 @@ geometry_msgs::Point lerpByLength(
   geometry_msgs::Point prev_pt = point_array.front();
   double accumulated_length = 0;
   for (const auto & pt : point_array) {
-    const double distance = getDistance3d(prev_pt, pt);
+    const double distance = autoware_utils::calcDistance3d(prev_pt, pt);
     if (accumulated_length + distance > length) {
       return lerpByPoint(prev_pt, pt, (length - accumulated_length) / distance);
     }
@@ -386,18 +369,6 @@ bool lerpByTimeStamp(
   return false;
 }
 
-double getDistance2d(const geometry_msgs::Pose & p1, const geometry_msgs::Pose & p2)
-{
-  double dx = p1.position.x - p2.position.x;
-  double dy = p1.position.y - p2.position.y;
-  return std::sqrt(dx * dx + dy * dy);
-}
-
-double getDistance3d(const geometry_msgs::Point & p1, const geometry_msgs::Point & p2)
-{
-  return std::sqrt(std::pow(p1.x - p2.x, 2) + std::pow(p1.y - p2.y, 2) + std::pow(p1.z - p2.z, 2));
-}
-
 double getDistanceBetweenPredictedPaths(
   const PredictedPath & object_path, const PredictedPath & ego_path, const double start_time,
   const double end_time, const double resolution)
@@ -415,7 +386,7 @@ double getDistanceBetweenPredictedPaths(
     if (!lerpByTimeStamp(ego_path, t, &ego_pose)) {
       continue;
     }
-    double distance = getDistance3d(object_pose.position, ego_pose.position);
+    double distance = autoware_utils::calcDistance3d(object_pose, ego_pose);
     if (distance < min_distance) {
       min_distance = distance;
     }
@@ -664,9 +635,7 @@ PathWithLaneId removeOverlappingPoints(const PathWithLaneId & input_path)
     }
 
     constexpr double min_dist = 0.001;
-    if (
-      getDistance3d(filtered_path.points.back().point.pose.position, pt.point.pose.position) <
-      min_dist) {
+    if (autoware_utils::calcDistance3d(filtered_path.points.back().point, pt.point) < min_dist) {
       filtered_path.points.back().lane_ids.push_back(pt.lane_ids.front());
     } else {
       filtered_path.points.push_back(pt);
@@ -696,7 +665,7 @@ bool setGoal(
     {
       bool found = false;
       for (size_t i = 0; i < input.points.size(); ++i) {
-        const double dist = getDistance2d(input.points.at(i).point.pose, goal);
+        const double dist = autoware_utils::calcDistance2d(input.points.at(i).point, goal);
         if (
           dist < search_radius_range && dist < min_dist &&
           exists(input.points.at(i).lane_ids, goal_lane_id)) {
@@ -713,7 +682,7 @@ bool setGoal(
     size_t min_dist_out_of_range_index;
     {
       for (size_t i = min_dist_index; 0 <= i; --i) {
-        const double dist = getDistance2d(input.points.at(i).point.pose, goal);
+        const double dist = autoware_utils::calcDistance2d(input.points.at(i).point, goal);
         goal_z = input.points.at(i).point.pose.position.z;
         min_dist_out_of_range_index = i;
         if (search_radius_range < dist) {
@@ -1126,7 +1095,7 @@ autoware_planning_msgs::PathPointWithLaneId insertStopPoint(
   for (size_t i = 1; i < path->points.size(); i++) {
     const auto prev_pose = path->points.at(i - 1).point.pose;
     const auto curr_pose = path->points.at(i).point.pose;
-    const double segment_length = getDistance3d(prev_pose.position, curr_pose.position);
+    const double segment_length = autoware_utils::calcDistance3d(prev_pose, curr_pose);
     accumulated_length += segment_length;
     if (accumulated_length > length) {
       insert_idx = i;
@@ -1303,15 +1272,6 @@ cv::Point toCVPoint(
   return cv::Point(
     static_cast<int>((height_m - geom_point.y) / resolution),
     static_cast<int>((width_m - geom_point.x) / resolution));
-}
-
-std::vector<double> rangeVector(double start, double diff, double end)
-{
-  std::vector<double> v;
-  for (double d = start; d <= end; d += diff) {
-    v.push_back(d);
-  }
-  return v;
 }
 
 // TODO(Horibe) There is a similar function in route_handler.
