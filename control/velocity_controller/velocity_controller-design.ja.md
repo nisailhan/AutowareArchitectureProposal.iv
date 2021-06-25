@@ -107,7 +107,7 @@ Ideally, this message should be defined as a specific debug message with meaning
    - 解除条件（停止するまで解除しないかどうかなど）や、緊急制動時の減速度はパラメータによって管理されます。
 
 
-状態遷移図を以下に示します（TODO）
+状態遷移図を以下に示します
 
 ![](./media/VelocityControllerStateTransition.drawio.svg)
 ### Logics

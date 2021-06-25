@@ -58,6 +58,7 @@ public:
     params_.strong_stop_dist = strong_stop_dist;
   }
 
+  // predict time when car stops by fitting some latest observed velocity history with linear function (v = at + b)
   boost::optional<double> calcTimeToStop(
     const std::vector<std::pair<ros::Time, double>> & vel_hist) const
   {
@@ -69,7 +70,6 @@ public:
       return {};
     }
 
-    // predict time to stop by fitting some latest points of vel_hist with linear function (v = at + b)
     // calculate some variables for fitting
     const ros::Time current_ros_time = ros::Time::now();
     double mean_t = 0.0;

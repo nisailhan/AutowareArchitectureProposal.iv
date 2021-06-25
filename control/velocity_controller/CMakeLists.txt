@@ -13,6 +13,7 @@ find_package(
   dynamic_reconfigure
   geometry_msgs
   roscpp
+  signal_processing
   tf2
   tf2_ros
 )
@@ -29,6 +30,7 @@ catkin_package(
     autoware_utils
     geometry_msgs
     roscpp
+    signal_processing
     tf2
     tf2_ros
 )
@@ -47,7 +49,7 @@ add_executable(
   src/velocity_controller_core.cpp
   src/velocity_controller_node.cpp
   src/pid.cpp
-  src/velocity_controller_mathutils.cpp
+  src/velocity_controller_utils.cpp
 )
 
 add_dependencies(
