@@ -169,6 +169,9 @@ AvoidanceParameters BehaviorPathPlanner::getAvoidanceParam()
     "avoidance/min_distance_avoidance_end_to_object", p.min_distance_avoidance_end_to_object, 5.0);
   pnh_.param("avoidance/time_avoidance_end_to_object", p.time_avoidance_end_to_object, 1.0);
 
+  pnh_.param("avoidance/nominal_lateral_jerk", p.nominal_lateral_jerk, 0.3);
+  pnh_.param("avoidance/max_lateral_jerk", p.max_lateral_jerk, 2.0);
+
   return p;
 };
 

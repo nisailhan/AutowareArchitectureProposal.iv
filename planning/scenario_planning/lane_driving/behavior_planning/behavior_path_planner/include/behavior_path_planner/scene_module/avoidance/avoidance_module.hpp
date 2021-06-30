@@ -81,6 +81,13 @@ struct AvoidanceParameters
 
   // we want to end the avoidance a few seconds before we pass by the avoided target.
   double time_avoidance_end_to_object;
+
+  // Avoidance path is generated with this jerk.
+  // If there is no margin, the jerk increases up to max lateral jerk.
+  double nominal_lateral_jerk;
+
+  // if the avoidance path exceeds this lateral jerk, it will be not used anymore.
+  double max_lateral_jerk;
 };
 
 struct Frenet

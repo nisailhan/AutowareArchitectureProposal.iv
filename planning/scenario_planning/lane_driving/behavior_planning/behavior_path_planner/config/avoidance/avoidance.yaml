@@ -14,3 +14,6 @@ avoidance:
 
   min_distance_avoidance_end_to_object: 5.0   # [m]
   time_avoidance_end_to_object: 1.0           # [s]
+
+  nominal_lateral_jerk: 0.3   # [m/s3]
+  max_lateral_jerk: 2.0       # [m/s3]

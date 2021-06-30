@@ -216,7 +216,11 @@ AvoidancePlanningData AvoidanceModule::calcAvoidancePlanningData() const
 
 std::vector<ShiftPoint> AvoidanceModule::calcShiftPointsInFrenet(DebugData & debug) const
 {
-  constexpr double LATERAL_JERK_LIMIT = 0.5;
+
+  /*
+   * NOTE: this logic is under development, and will be cleaned up after logic fix.
+   */
+
   const auto & reference = avoidance_data_.reference_path;
   const auto ego_closest_idx = findNearestIndex(reference.points, getEgoPosition());
   const auto arclength_v =
@@ -320,7 +324,8 @@ std::vector<ShiftPoint> AvoidanceModule::calcShiftPointsInFrenet(DebugData & deb
     sp.end = reference.points.at(end_idx).point.pose;
     const double nominal_long_dist = std::max(
       parameters_.min_distance_avoiding,
-      path_shifter_.calcLongitudinalDistFromJerk(delta_shift, LATERAL_JERK_LIMIT, getEgoSpeed()));
+      path_shifter_.calcLongitudinalDistFromJerk(
+        delta_shift, parameters_.nominal_lateral_jerk, getEgoSpeed()));
 
     double dist_to_ego =
       autoware_utils::calcSignedArcLength(reference.points, getEgoPosition(), sp.end.position);
@@ -337,6 +342,17 @@ std::vector<ShiftPoint> AvoidanceModule::calcShiftPointsInFrenet(DebugData & deb
     }
 
     const double longitudinal = std::min({nominal_long_dist, dist_to_ego, max_interval_dist});
+    const double dist_limit = path_shifter_.calcLongitudinalDistFromJerk(
+      delta_shift, parameters_.max_lateral_jerk, getEgoSpeed());
+    ROS_DEBUG(
+      "delta_shift = %f, nominal_long_dist = %f, dist_limit = %f, longitudinal = %f, vel = %f",
+      delta_shift, nominal_long_dist, dist_limit, longitudinal, getEgoSpeed());
+
+    // if lateral jerk is too high, not using this object as a target.
+    if (longitudinal < dist_limit) {
+      ROS_DEBUG("jerk is too large. not avoid this object");
+      continue;
+    }
 
     const auto start_idx = util::getIdxByArclength(reference, sp.end.position, -longitudinal);
     sp.start = reference.points.at(std::max(ego_closest_idx, start_idx)).point.pose;
