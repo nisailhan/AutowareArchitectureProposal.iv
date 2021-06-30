@@ -100,7 +100,7 @@ public:
     const double v = std::abs(velocity);
     if (j < 1.0e-8) return 1.0e10;  // TODO(Horibe) maybe invalid arg?
 
-    return 4.0 * std::pow(0.5 * l / j, 1.0 / 3.0) * std::pow(v, 3);
+    return 4.0 * std::pow(0.5 * l / j, 1.0 / 3.0) * v;
   }
 
   double getTotalShiftLength() const
