@@ -67,8 +67,8 @@ BT::NodeStatus SceneModuleBTNodeInterface::tick()
       module_status_->is_waiting_approval = scene_module_->approval_handler_.isWaitingApproval();
 
     } catch (const std::exception & e) {
-      std::cout << "behavior module has failed with exception: " << e.what() << std::endl;
-      std::exit(EXIT_FAILURE);
+      ROS_ERROR_STREAM("behavior module has failed with exception: " << e.what());
+      // std::exit(EXIT_FAILURE);  // TODO(Horibe) do appropriate handing
     }
     return BT::NodeStatus::SUCCESS;
   }
@@ -87,8 +87,8 @@ BT::NodeStatus SceneModuleBTNodeInterface::tick()
       module_status_->is_waiting_approval = scene_module_->approval_handler_.isWaitingApproval();
 
     } catch (const std::exception & e) {
-      std::cout << "behavior module has failed with exception: " << e.what() << std::endl;
-      std::exit(EXIT_FAILURE);
+      ROS_ERROR_STREAM("behavior module has failed with exception: "  << e.what());
+      // std::exit(EXIT_FAILURE);  // TODO(Horibe) do appropriate handing
     }
 
     ROS_DEBUG_STREAM("on tick: current status = " << BT::toStr(current_status));

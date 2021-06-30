@@ -308,7 +308,8 @@ std::shared_ptr<autoware_planning_msgs::PathWithLaneId> BehaviorPathPlanner::get
   const BehaviorModuleOutput & bt_output)
 {
   // TODO(Horibe) do some error handling when path is not available.
-  auto path = bt_output.path ? bt_output.path : util::generateCenterLinePath(planner_data_);
+
+  auto path = bt_output.path ? bt_output.path : planner_data_->prev_output_path;
   path->header = planner_data_->route_handler->getRouteHeader();
   path->header.stamp = ros::Time::now();
   ROS_DEBUG("BehaviorTreeManager: output is %s.", bt_output.path ? "FOUND" : "NOT FOUND");
