@@ -2,9 +2,9 @@
 
 ## Purpose
 
-`motion_velocity_smoother`は目標軌道上の各点における望ましい車速を計画して出力するモジュールである。
-このモジュールは、速度の最大化と乗り心地の良さを両立するために、事前に指定された制限速度、制限加速度および制限躍度の範囲で車速を計画する。
-加速度や躍度の制限を与えることは車速の変化を滑らかにすることに対応するため、このモジュールを`motion_velocity_smoother`と呼んでいる。
+`motion_velocity_smoother` outputs a desired velocity profile on a reference trajectory.
+This module plans a velocity profile within the limitations of the velocity, the acceleration and the jerk to realize both the maximization of velocity and the ride quality.
+We call this module `motion_velocity_smoother` because the limitations of the acceleration and the jerk means the smoothness of the velocity profile.
 
 
 ## Inner-workings / Algorithms
@@ -15,65 +15,70 @@
 
 #### Extract trajectory
 
-自車後輪軸中心位置に最も近い参照経路上の点に対し、`extract_behind_dist`だけ戻った点から`extract_ahead_dist`だけ進んだ点までの参照経路を抜き出す。
+For the point on the reference trajectory closest to the center of the rear wheel axle of the vehicle, it extracts the reference path between `extract_behind_dist` behind and `extract_ahead_dist` ahead.
 
 #### Apply external velocity limit
 
-モジュール外部から指定された速度制限を適用する。
-ここで扱う外部の速度制限は`/planning/scenario_planning/max_velocity`のtopicで渡されるもので、地図上で設定された速度制限など、参照経路にすでに設定されている制限速度とは別である。
-外部から指定される速度制限は、パラメータで指定されている減速度および躍度の制限の範囲で減速可能な位置から速度制限を適用する。
+It applies the velocity limit input from the external of `motion_velocity_smoother`.
+Remark that the external velocity limit is different from the velocity limit already set on the map and the reference trajectory.
+The external velocity is applied at the position that it is able to reach the velocity limit with the deceleration and the jerk constraints set as the parameter.
 
 #### Apply stop approaching velocity
 
-停止点に近づいたときの速度を設定する。障害物近傍まで近づく場合や、正着精度向上などの目的に用いる。
+It applies the velocity limit near the stopping point.
+This function is used to approach near the obstacle or improve the accuracy of stopping.
 
 #### Apply lateral acceleration limit
 
-経路の曲率に応じて、指定された最大横加速度`max_lateral_accel`を超えない速度を制限速度として設定する。ただし、制限速度は`min_curve_velocity`を下回らないように設定する。
+It applies the velocity limit to decelerate at the curve.
+It calculate the velocity limit from the curvature of the reference trajectory and the maximum lateral acceleration `max_lateral_accel`.
+The velocity limit is set as not to fall under `min_curve_velocity`.
 
 #### Resample trajectory
 
-指定された時間間隔で経路の点を再サンプルする。ただし、経路全体の長さは`min_trajectory_length`から`max_trajectory_length`の間となるように再サンプルを行い、点の間隔は`min_trajectory_interval_distance`より小さくならないようにする。
-現在車速で`resample_time`の間進む距離までは密にサンプリングし、それ以降は疎にサンプリングする。
-この方法でサンプリングすることで、低速時は密に、高速時は疎にサンプルされるため、停止精度と計算負荷軽減の両立を図っている。
+It resamples the points on the reference trajectory with designated time interval.
+Note that the range of the length of the trajectory is set between `min_trajectory_length` and `max_trajectory_length`, and the distance between two points is longer than `min_trajectory_interval_distance`.
+It samples densely up to the distance traveled between `resample_time` with the current velocity, then samples sparsely after that.
+By sampling according to the velocity, both calculation load and accuracy are achieved since it samples finely at low velocity and coarsely at high velocity.
 
 #### Calculate initial state
 
-速度計画のための初期値を計算する。初期値は状況に応じて下表のように計算する。
+Calculate initial values for velocity planning.
+The initial values are calculated according to the situation as shown in the following table.
 
-| 状況 | 初期速度 | 初期加速度 |
+| Situation | Initial velocity | Initial acceleration |
 | ---- | -------  | ---------- |
-| 最初の計算時 | 現在車速 | 0.0 |
-| 発進時 | `engage_velocity` | `engage_acceleration` |
-| 現在車速と計画車速が乖離 | 現在車速 | 前回計画値 |
-| 通常時 | 前回計画値 | 前回計画値 |
+| First calculation | Current velocity | 0.0 |
+| Engaging | `engage_velocity` | `engage_acceleration` |
+| Deviate between the planned velocity and the current velocity | Current velocity | Previous planned value |
+| Normal | Previous planned value | Previous planned value |
 
 #### Smooth velocity
 
-速度の計画を行う。速度計画のアルゴリズムは`JerkFiltered`, `L2`, `Linf`の3種類のうちからコンフィグで指定する。
-最適化のソルバはOSQP[1]を利用する。
+It plans the velocity.
+The algorithm of velocity planning is chosen from `JerkFiltered`, `L2` and `Linf`, and it is set in the launch file.
+In these algorithms, they use OSQP[1] as the solver of the optimization.
 
 ##### JerkFiltered
 
-速度の2乗（最小化で表すため負値で表現）、制限速度逸脱量の2乗、制限加度逸脱量の2乗、制限ジャーク逸脱量の2乗、ジャークの2乗の総和を最小化する。
+It minimizes the sum of the minus of the square of the velocity and the square of the violation of the velocity limit, the acceleration limit and the jerk limit.
 
 ##### L2
 
-速度の2乗（最小化で表すため負値で表現）、制限速度逸脱量の2乗、制限加度逸脱量の2乗、疑似ジャーク[2]の2乗の総和を最小化する。
+It minimizes the sum of the minus of the square of the velocity, the square of the the pseudo-jerk[2] and the square of the violation of the velocity limit and the acceleration limit.
 
 ##### Linf
 
-速度の2乗（最小化で表すため負値で表現）、制限速度逸脱量の2乗、制限加度逸脱量の2乗の総和と疑似ジャーク[2]の絶対最大値の和の最小化する。
-
+It minimizes the sum of the minus of the square of the velocity, the maximum absolute value of the the pseudo-jerk[2] and the square of the violation of the velocity limit and the acceleration limit.
 
 #### Post process
 
-計画された軌道の後処理を行う。
-- 停止点より先の速度を0に設定
-- 速度がパラメータで与えられる`max_velocity`以下となるように設定
-- 自車位置より手前の点における速度を設定
-- Trajectoryの仕様に合わせてリサンプリング
-- デバッグデータの出力
+It performs the post-process of the planned velocity.
+- Set zero velocity ahead of the stopping point
+- Set maximum velocity given in the config named `max_velocity`
+- Set velocity behind the current pose
+- Resample trajectory
+- Output debug data
 
 ## Inputs / Outputs
 
@@ -229,9 +234,9 @@ Example:
 
 ## Assumptions / Known limits
 
-- 参照経路上の点には制限速度（停止点）が正しく設定されていることを仮定
-- 参照経路に設定されている制限速度を指定した減速度やジャークで達成不可能な場合、可能な範囲で速度、加速度、ジャークの逸脱量を抑えながら減速
-- 各逸脱量の重視の度合いはパラメータにより指定
+- Assume that the velocity limit or the stopping point is properly set at the point on the reference trajectory
+- If the velocity limit set in the reference path cannot be achieved by the designated constraints of the deceleration and the jerk, decelerate while suppressing the velocity, the acceleration and the jerk deviation as much as possible
+- The importance of the deviations is set in the config file
 
 ## (Optional) Error detection and handling
 
