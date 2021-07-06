@@ -43,7 +43,8 @@ The default parameters are adjusted to the AutonomouStuff Lexus RX 450h for unde
 |enable_path_smoothing|bool|path smoothing flag. This should be true when uses path resampling to reduce resampling noise.|true|
 |path_filter_moving_ave_num|int|number of data points moving average filter for path smoothing|35|
 |path_smoothing_times|int|number of times of applying path smoothing filter|1|
-|curvature_smoothing_num|double|index distance of points used in curvature calculation: p(i-num), p(i), p(i+num). larger num makes less noisy values.|35|
+|curvature_smoothing_num_ref_steer|double|index distance of points used in curvature calculation for reference steer command: p(i-num), p(i), p(i+num). larger num makes less noisy values.|35|
+|curvature_smoothing_num_traj|double|index distance of points used in curvature calculation for trajectory: p(i-num), p(i), p(i+num). larger num makes less noisy values.|1|
 |steering_lpf_cutoff_hz|double| cutoff frequency of lowpass filter for steering output command [hz]|3.0|
 |admisible_position_error|double| stop vehicle when following position error is larger than this value [m].|5.0|
 |admisible_yaw_error_deg|double|stop vehicle when following yaw angle error is larger than this value [deg].|90.0|

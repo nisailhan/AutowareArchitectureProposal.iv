@@ -196,14 +196,15 @@ void MPCUtils::calcTrajectoryYawFromXY(MPCTrajectory * traj)
   }
 }
 
-bool MPCUtils::calcTrajectoryCurvature(int curvature_smoothing_num, MPCTrajectory * traj)
+bool MPCUtils::calcTrajectoryCurvature(
+  int curvature_smoothing_num_traj, int curvature_smoothing_num_ref_steer, MPCTrajectory * traj)
 {
   if (!traj) {
     return false;
   }
 
-  traj->k = calcTrajectoryCurvature(1, *traj);
-  traj->smooth_k = calcTrajectoryCurvature(curvature_smoothing_num, *traj);
+  traj->k = calcTrajectoryCurvature(curvature_smoothing_num_traj, *traj);
+  traj->smooth_k = calcTrajectoryCurvature(curvature_smoothing_num_ref_steer, *traj);
   return true;
 }
 
