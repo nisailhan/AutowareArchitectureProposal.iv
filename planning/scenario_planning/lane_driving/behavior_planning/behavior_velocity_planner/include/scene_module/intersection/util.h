@@ -94,4 +94,7 @@ bool getStopPoseIndexFromMap(
   const autoware_planning_msgs::PathWithLaneId & path, const int lane_id,
   const std::shared_ptr<const PlannerData> & planner_data, int & stop_idx_ip, int dist_thr);
 
+std::vector<lanelet::CompoundPolygon3d> getPolygon3dFromLaneletsVec(
+  const std::vector<lanelet::ConstLanelets> & ll_vec, double clip_length);
+
 }  // namespace util
