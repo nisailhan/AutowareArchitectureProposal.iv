@@ -281,8 +281,8 @@ bool TrafficLightModule::modifyPathVelocity(
   Eigen::Vector2d stop_line_point;
   size_t stop_line_point_idx;
   calcStopPointAndInsertIndex(
-    input_path, lanelet_stop_lines, planner_data_->stop_line_extend_length,
-    planner_param_.stop_margin + planner_data_->base_link2front, stop_line_point,
+    input_path, lanelet_stop_lines, planner_param_.stop_margin + planner_data_->base_link2front,
+    planner_data_->stop_line_extend_length, stop_line_point,
     stop_line_point_idx);
 
   // Calculate dist to stop pose
