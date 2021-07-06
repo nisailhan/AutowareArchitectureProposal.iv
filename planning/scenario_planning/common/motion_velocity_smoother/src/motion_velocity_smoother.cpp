@@ -378,7 +378,7 @@ void MotionVelocitySmoother::onCurrentTrajectory(
   const auto output_closest_point =
     trajectory_utils::calcInterpolatedTrajectoryPoint(output, current_pose_ptr_->pose);
   if (!output_closest) {
-    ROS_WARN("[MotionVelocitySmoother] Cannot find closest waypoint for output trajectory");
+    ROS_WARN_THROTTLE(5.0, "[MotionVelocitySmoother] Cannot find closest waypoint for output trajectory");
     return;
   }
 
@@ -429,11 +429,17 @@ autoware_planning_msgs::Trajectory MotionVelocitySmoother::calcTrajectoryVelocit
   // Extract trajectory around self-position with desired forward-backward length
   const auto input_closest = autoware_utils::findNearestIndex(
     traj_input.points, current_pose_ptr_->pose, node_param_.delta_yaw_threshold);
-  if (!input_closest) return prev_output_;
+  if (!input_closest) {
+    ROS_WARN_THROTTLE(5.0, "[MotionVelocitySmoother] Cannot find the closest point from input trajectory");
+    return prev_output_;
+  }
 
   auto traj_extracted = trajectory_utils::extractPathAroundIndex(
     traj_input, *input_closest, node_param_.extract_ahead_dist, node_param_.extract_behind_dist);
-  if (!traj_extracted) return prev_output_;
+  if (!traj_extracted) {
+    ROS_WARN("[MotionVelocitySmoother] Fail to extract the path from the input trajectory");
+    return prev_output_;
+  }
 
   // Smoother can not handle negative velocity, so multiple -1 to velocity if any trajectory points have reverse
   // velocity
@@ -455,7 +461,10 @@ autoware_planning_msgs::Trajectory MotionVelocitySmoother::calcTrajectoryVelocit
   // Change trajectory velocity to zero when current_velocity == 0 & stop_dist is close
   const auto traj_extracted_closest = autoware_utils::findNearestIndex(
     traj_extracted->points, current_pose_ptr_->pose, node_param_.delta_yaw_threshold);
-  if (!traj_extracted_closest) return prev_output_;
+  if (!traj_extracted_closest) {
+    ROS_WARN("[MotionVelocitySmoother] Cannot find the closest point from extracted trajectory");
+    return prev_output_;
+  }
 
   // Apply velocity to approach stop point
   applyStopApproachingVelocity(*traj_extracted);
@@ -472,6 +481,7 @@ autoware_planning_msgs::Trajectory MotionVelocitySmoother::calcTrajectoryVelocit
   const auto output_closest = autoware_utils::findNearestIndex(
     output.points, current_pose_ptr_->pose, node_param_.delta_yaw_threshold);
   if (!output_closest) {
+    ROS_WARN("[MotionVelocitySmoother] Cannot find the closest point from the output trajectory");
     return prev_output_;
   }
 
@@ -501,6 +511,7 @@ bool MotionVelocitySmoother::smoothVelocity(
   auto traj_resampled = smoother_->resampleTrajectory(
     *traj_lateral_acc_filtered, current_velocity_ptr_->twist.linear.x, *traj_pre_resampled_closest);
   if (!traj_resampled) {
+    ROS_WARN("[MotionVelocitySmoother] Fail to do resampling before the optimization");
     return false;
   }
 
@@ -534,7 +545,7 @@ bool MotionVelocitySmoother::smoothVelocity(
 
   std::vector<autoware_planning_msgs::Trajectory> debug_trajectories;
   if (!smoother_->apply(initial_vel, initial_acc, clipped, traj_smoothed, debug_trajectories)) {
-    ROS_WARN("[MotionVelocitySmoother] fail to solve optimization.");
+    ROS_WARN("[MotionVelocitySmoother] Fail to solve optimization.");
   }
 
   traj_smoothed.points.insert(
@@ -546,7 +557,7 @@ bool MotionVelocitySmoother::smoothVelocity(
       debug_trajectory.points.insert(
         debug_trajectory.points.begin(), traj_resampled->points.begin(),
         traj_resampled->points.begin() + *traj_resampled_closest);
-      for (size_t i = 0; i < debug_trajectory.points.size(); ++i) {
+      for (size_t i = 0; i < *traj_resampled_closest; ++i) {
         debug_trajectory.points.at(i).twist.linear.x =
           debug_trajectory.points.at(*traj_resampled_closest).twist.linear.x;
       }
@@ -677,8 +688,7 @@ MotionVelocitySmoother::calcInitialMotion(
           vehicle_speed, target_vel, node_param_.engage_velocity, engage_vel_thr, stop_dist);
         return std::make_tuple(initial_vel, initial_acc, type);
       } else {
-        ROS_WARN_THROTTLE(
-          3.0,
+        ROS_DEBUG(
           "[MotionVelocitySmoother] calcInitialMotion : stop point is close (%.3f[m]). no engage.",
           stop_dist);
       }

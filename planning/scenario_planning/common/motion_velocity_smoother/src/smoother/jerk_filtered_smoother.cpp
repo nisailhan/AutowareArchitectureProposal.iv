@@ -46,9 +46,21 @@ bool JerkFilteredSmoother::apply(
 {
   output = input;
 
-  if (static_cast<int>(input.points.size()) < 2) {
-    ROS_WARN("[MotionVelocitySmoother] trajectory length is not enough.");
+  if (input.points.empty()) {
+    ROS_WARN(
+      "[JerkFilteredSmoother] Input Trajectory to the jerk filtered optimization is empty.");
     return false;
+  }
+
+  if (input.points.size() == 1) {
+    // No need to do optimization
+    output.points.front().twist.linear.x = v0;
+    output.points.front().accel.linear.x = a0;
+    debug_trajectories.resize(3);
+    debug_trajectories[0] = output;
+    debug_trajectories[1] = output;
+    debug_trajectories[2] = output;
+    return true;
   }
 
   if (std::fabs(input.points.front().twist.linear.x) < 0.1) {
