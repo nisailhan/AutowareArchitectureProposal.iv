@@ -184,6 +184,12 @@ void VelocityController::callbackTrajectory(const autoware_planning_msgs::Trajec
     ROS_ERROR_THROTTLE(3.0, "[velocity_controller] received invalid trajectory. ignore.");
     return;
   }
+
+  if (msg->points.size() < 2) {
+    ROS_WARN_THROTTLE(3.0, "Unexpected trajectory size < 2. Ignored.");
+    return;
+  }
+
   trajectory_ptr_ = std::make_shared<autoware_planning_msgs::Trajectory>(*msg);
 }
 
