@@ -16,6 +16,7 @@
 
 #include "motion_velocity_smoother/trajectory_utils.hpp"
 #include "motion_velocity_smoother/linear_interpolation.h"
+#include "spline_interpolation/spline_interpolation.h"
 
 namespace motion_velocity_smoother
 {
@@ -270,7 +271,8 @@ void applyMaximumVelocityLimit(
 
 boost::optional<autoware_planning_msgs::Trajectory> applyLinearInterpolation(
   const std::vector<double> & base_index,
-  const autoware_planning_msgs::Trajectory & base_trajectory, const std::vector<double> & out_index)
+  const autoware_planning_msgs::Trajectory & base_trajectory, const std::vector<double> & out_index,
+  const bool use_spline_for_pose)
 {
   std::vector<double> px, py, pz, pyaw, tlx, taz, alx, aaz;
   for (const auto & p : base_trajectory.points) {
@@ -286,10 +288,20 @@ boost::optional<autoware_planning_msgs::Trajectory> applyLinearInterpolation(
 
   convertEulerAngleToMonotonic(pyaw);
 
-  const auto px_p = linear_interpolation::interpolate(base_index, px, out_index);
-  const auto py_p = linear_interpolation::interpolate(base_index, py, out_index);
-  const auto pz_p = linear_interpolation::interpolate(base_index, pz, out_index);
-  const auto pyaw_p = linear_interpolation::interpolate(base_index, pyaw, out_index);
+  boost::optional<std::vector<double>> px_p, py_p, pz_p, pyaw_p;
+  if (use_spline_for_pose) {
+    spline_interpolation::SplineInterpolator spline;
+    std::vector<double> _px_p, _py_p, _pz_p, _pyaw_p;
+    if (spline.interpolate(base_index, px, out_index, _px_p)) px_p = _px_p;
+    if (spline.interpolate(base_index, py, out_index, _py_p)) py_p = _py_p;
+    if (spline.interpolate(base_index, pz, out_index, _pz_p)) pz_p = _pz_p;
+    if (spline.interpolate(base_index, pyaw, out_index, _pyaw_p)) pyaw_p = _pyaw_p;
+  } else {
+    px_p = linear_interpolation::interpolate(base_index, px, out_index);
+    py_p = linear_interpolation::interpolate(base_index, py, out_index);
+    pz_p = linear_interpolation::interpolate(base_index, pz, out_index);
+    pyaw_p = linear_interpolation::interpolate(base_index, pyaw, out_index);
+  }
   const auto tlx_p = linear_interpolation::interpolate(base_index, tlx, out_index);
   const auto taz_p = linear_interpolation::interpolate(base_index, taz, out_index);
   const auto alx_p = linear_interpolation::interpolate(base_index, alx, out_index);

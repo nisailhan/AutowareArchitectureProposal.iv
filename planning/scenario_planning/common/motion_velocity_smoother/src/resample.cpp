@@ -119,7 +119,8 @@ boost::optional<autoware_planning_msgs::Trajectory> resampleTrajectory(
     out_arclength.push_back(dist_i + front_arclength_value);
   }
 
-  auto output = trajectory_utils::applyLinearInterpolation(in_arclength, input, out_arclength);
+  auto output =
+    trajectory_utils::applyLinearInterpolation(in_arclength, input, out_arclength, true);
   if (!output) {
     ROS_WARN(
       "[MotionVelocitySmoother]: fail trajectory interpolation. size : in_arclength = %lu, "

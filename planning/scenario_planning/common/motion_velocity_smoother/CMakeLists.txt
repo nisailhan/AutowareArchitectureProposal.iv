@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_ros
   dynamic_reconfigure
   osqp_interface
+  spline_interpolation
 )
 
 generate_dynamic_reconfigure_options(cfg/MotionVelocitySmoother.cfg)
@@ -31,6 +32,7 @@ catkin_package(
     tf2
     tf2_ros
     osqp_interface
+    spline_interpolation
   LIBRARIES
     motion_velocity_smoother
 )

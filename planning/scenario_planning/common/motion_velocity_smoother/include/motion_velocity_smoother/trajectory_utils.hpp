@@ -68,7 +68,7 @@ boost::optional<size_t> searchZeroVelocityIdx(
 boost::optional<autoware_planning_msgs::Trajectory> applyLinearInterpolation(
   const std::vector<double> & base_index,
   const autoware_planning_msgs::Trajectory & base_trajectory,
-  const std::vector<double> & out_index);
+  const std::vector<double> & out_index, const bool use_spline_for_pose = false);
 
 bool calcStopDistWithJerkConstraints(
   const double v0, const double a0, const double jerk_acc, const double jerk_dec,
