@@ -92,15 +92,33 @@ bool JerkFilteredSmoother::apply(
   debug_trajectories[1] = backward_filtered;
   debug_trajectories[2] = filtered;
 
-  const size_t N = filtered.points.size();
+  // Resample Trajectory for Optimization
+  auto opt_resampled_trajectory =
+    resampling::resampleTrajectory(filtered, v0, 0, base_param_.resample_param);
 
-  std::vector<double> interval_dist_arr =
-    trajectory_utils::calcTrajectoryIntervalDistance(filtered);
+  const size_t N = opt_resampled_trajectory->points.size();
+
+  // If Resampled Size is too small, we don't do optimization
+  if (N == 1) {
+    // No need to do optimization
+    output.points.front().twist.linear.x = v0;
+    output.points.front().accel.linear.x = a0;
+    debug_trajectories[0] = output;
+    debug_trajectories[1] = output;
+    debug_trajectories[2] = output;
+    return true;
+  }
+
+  output = *opt_resampled_trajectory;
+
+  const std::vector<double> interval_dist_arr =
+    trajectory_utils::calcTrajectoryIntervalDistance(*opt_resampled_trajectory);
 
   std::vector<double> v_max_arr(N, 0.0);
   for (size_t i = 0; i < N; ++i) {
-    v_max_arr.at(i) = filtered.points.at(i).twist.linear.x;
+    v_max_arr.at(i) = opt_resampled_trajectory->points.at(i).twist.linear.x;
   }
+  v_max_arr.back() = 0.0;  // Ensure Terminal Velocity is zero
 
   /*
    * x = [
@@ -154,11 +172,11 @@ bool JerkFilteredSmoother::apply(
   }
 
   for (size_t i = 0; i < N; ++i) {
-    double v_max = std::max(v_max_arr.at(i), 0.1);
-    q[IDX_B0 + i] =
+    const double v_max = std::max(v_max_arr.at(i), 0.1);
+    q.at(IDX_B0 + i) =
       -1.0 / (v_max * v_max);  // |v_max_i^2 - b_i|/v_max^2 -> minimize (-bi) * ds / v_max^2
     if (i < N - 1) {
-      q[IDX_B0 + i] *= std::max(interval_dist_arr.at(i), 0.0001);
+      q.at(IDX_B0 + i) *= std::max(interval_dist_arr.at(i), 0.0001);
     }
     P(IDX_DELTA0 + i, IDX_DELTA0 + i) += over_v_weight;  // over velocity cost
     P(IDX_SIGMA0 + i, IDX_SIGMA0 + i) += over_a_weight;  // over acceleration cost
@@ -335,7 +353,7 @@ autoware_planning_msgs::Trajectory JerkFilteredSmoother::forwardJerkFilter(
     const double dt = std::min(ds / std::max(current_vel, 1.0e-6), max_dt);
 
     if (current_acc + j_max * dt >= a_max) {
-      double tmp_jerk = std::min((a_max - current_acc) / dt, j_max);
+      const double tmp_jerk = std::min((a_max - current_acc) / dt, j_max);
       current_vel = current_vel + current_acc * dt + 0.5 * tmp_jerk * dt * dt;
       current_acc = a_max;
     } else {
@@ -393,7 +411,7 @@ autoware_planning_msgs::Trajectory JerkFilteredSmoother::mergeFilteredTrajectory
       const double dt = std::min(ds / std::max(current_vel, 1.0e-6), max_dt);
 
       if (current_acc + j_min * dt < a_min) {
-        double tmp_jerk = std::max((a_min - current_acc) / dt, j_min);
+        const double tmp_jerk = std::max((a_min - current_acc) / dt, j_min);
         current_vel = current_vel + current_acc * dt + 0.5 * tmp_jerk * dt * dt;
         current_acc = std::max(current_acc + tmp_jerk * dt, a_min);
       } else {
@@ -412,4 +430,13 @@ autoware_planning_msgs::Trajectory JerkFilteredSmoother::mergeFilteredTrajectory
   }
   return merged;
 }
+
+boost::optional<autoware_planning_msgs::Trajectory> JerkFilteredSmoother::resampleTrajectory(
+  const autoware_planning_msgs::Trajectory & input, const double v_current,
+  const int closest_id) const
+{
+  return resampling::resampleTrajectory(
+    input, v_current, closest_id, base_param_.resample_param, smoother_param_.jerk_filter_ds);
+}
+
 }  // namespace motion_velocity_smoother

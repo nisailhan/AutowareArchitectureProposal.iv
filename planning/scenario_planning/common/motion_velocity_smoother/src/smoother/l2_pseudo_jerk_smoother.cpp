@@ -213,4 +213,12 @@ bool L2PseudoJerkSmoother::apply(
 
   return true;
 }
+
+boost::optional<autoware_planning_msgs::Trajectory> L2PseudoJerkSmoother::resampleTrajectory(
+  const autoware_planning_msgs::Trajectory & input, const double v_current,
+  const int closest_id) const
+{
+  return resampling::resampleTrajectory(input, v_current, closest_id, base_param_.resample_param);
+}
+
 }  // namespace motion_velocity_smoother

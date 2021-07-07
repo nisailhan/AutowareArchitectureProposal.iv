@@ -142,5 +142,125 @@ boost::optional<autoware_planning_msgs::Trajectory> resampleTrajectory(
   return output;
 }
 
+boost::optional<autoware_planning_msgs::Trajectory> resampleTrajectory(
+  const autoware_planning_msgs::Trajectory & input, const double v_current, const size_t closest_id,
+  const ResampleParam & param, const double nominal_ds)
+{
+  // input arclength
+  std::vector<double> in_arclength = trajectory_utils::calcArclengthArray(input);
+
+  // Get the nearest point where velocity is zero
+  auto stop_id =
+    autoware_utils::searchZeroVelocityIndex(input.points, closest_id, input.points.size());
+  // Arc length from the closest point to the point where velocity is zero
+  double stop_arclength_value = param.max_trajectory_length;
+  if (stop_id) {
+    stop_arclength_value = std::min(
+      stop_arclength_value,
+      autoware_utils::calcSignedArcLength(input.points, closest_id, *stop_id));
+  }
+
+  // Do dense resampling before the stop line(3[m] ahead of the stop line)
+  if (param.min_trajectory_length < stop_arclength_value) {
+    stop_arclength_value = param.min_trajectory_length;
+  }
+  if (in_arclength.back() < stop_arclength_value) {
+    stop_arclength_value = in_arclength.back();
+  }
+  double start_stop_arclength_value = std::max(stop_arclength_value - 3.0, 0.0);
+
+  std::vector<double> out_arclength;
+
+  // Step1. Resample front trajectory
+  // Arc length from the initial point to the closest point
+  const double front_arclength_value = trajectory_utils::calcArcLength(input, 0, closest_id);
+  for (double s = 0.0; s <= front_arclength_value; s += nominal_ds) {
+    out_arclength.push_back(s);
+  }
+  if (std::fabs(out_arclength.back() - front_arclength_value) < 1e-3) {
+    out_arclength.back() = front_arclength_value;
+  } else {
+    out_arclength.push_back(front_arclength_value);
+  }
+
+  // Step2. Resample behind trajectory
+  double dist_i = 0.0;
+  bool is_zero_point_included = false;
+  bool is_endpoint_included = false;
+  while (true) {
+    double ds = nominal_ds;
+    if (start_stop_arclength_value <= dist_i && dist_i <= stop_arclength_value) {
+      // Dense sampling before the stop point
+      ds = 0.01;
+    }
+    dist_i += ds;
+
+    // Check if the distance is longer than max_trajectory_length
+    if (dist_i > param.max_trajectory_length) {
+      break;  // distance is over max.
+    }
+
+    // Check if the distance is longer than input arclength
+    if (dist_i + front_arclength_value >= in_arclength.back()) {
+      is_endpoint_included = true;  // distance is over input endpoint.
+      break;
+    }
+
+    // Check if the distance is longer than minimum_trajectory_length
+    if (dist_i >= param.min_trajectory_length) {
+      if (
+        std::fabs(out_arclength.back() - (param.min_trajectory_length + front_arclength_value)) <
+        1e-3) {
+        out_arclength.back() = param.min_trajectory_length + front_arclength_value;
+      } else {
+        out_arclength.push_back(param.min_trajectory_length + front_arclength_value);
+      }
+      break;
+    }
+
+    // Handle Close Stop Point
+    if (dist_i > stop_arclength_value && !is_zero_point_included) {
+      if (std::fabs(dist_i - stop_arclength_value) > 1e-3) {
+        // dist_i is much bigger than zero_vel_arclength_value
+        if (
+          !out_arclength.empty() &&
+          std::fabs(out_arclength.back() - (stop_arclength_value + front_arclength_value)) < 1e-3) {
+          out_arclength.back() = stop_arclength_value + front_arclength_value;
+        } else {
+          out_arclength.push_back(stop_arclength_value + front_arclength_value);
+        }
+      } else {
+        // dist_i is close to the zero_vel_arclength_value
+        dist_i = stop_arclength_value;
+      }
+
+      is_zero_point_included = true;
+    }
+
+    out_arclength.push_back(dist_i + front_arclength_value);
+  }
+
+  auto output = trajectory_utils::applyLinearInterpolation(in_arclength, input, out_arclength);
+  if (!output) {
+    ROS_WARN(
+      "[MotionVelocitySmoother]: fail trajectory interpolation. size : in_arclength = %lu, "
+      "input = %lu, out_arclength = %lu",
+      in_arclength.size(), input.points.size(), out_arclength.size());
+    return boost::none;
+  }
+
+  // add end point directly to consider the endpoint velocity.
+  if (is_endpoint_included) {
+    constexpr double ep_dist = 1.0E-3;
+    if (autoware_utils::calcDistance2d(output->points.back(), input.points.back()) < ep_dist) {
+      output->points.back() = input.points.back();
+    } else {
+      output->points.push_back(input.points.back());
+    }
+  }
+
+  return output;
+}
+
 }  // namespace resampling
 }  // namespace motion_velocity_smoother

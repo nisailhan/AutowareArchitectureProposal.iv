@@ -53,12 +53,12 @@ public:
     const autoware_planning_msgs::Trajectory & input, autoware_planning_msgs::Trajectory & output,
     std::vector<autoware_planning_msgs::Trajectory> & debug_trajectories) = 0;
 
-  virtual boost::optional<autoware_planning_msgs::Trajectory> applyLateralAccelerationFilter(
-    const autoware_planning_msgs::Trajectory & input) const;
-
   virtual boost::optional<autoware_planning_msgs::Trajectory> resampleTrajectory(
     const autoware_planning_msgs::Trajectory & input, const double v_current,
-    const int closest_id) const;
+    const int closest_id) const = 0;
+
+  virtual boost::optional<autoware_planning_msgs::Trajectory> applyLateralAccelerationFilter(
+    const autoware_planning_msgs::Trajectory & input) const;
 
   double getMaxAccel() const;
   double getMinDecel() const;

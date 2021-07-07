@@ -225,4 +225,12 @@ bool LinfPseudoJerkSmoother::apply(
     "[LinfPseudoJerkSmoother] init time = %f [ms], optimization time = %f [ms]", dt_ms1, dt_ms2);
   return true;
 }
+
+boost::optional<autoware_planning_msgs::Trajectory> LinfPseudoJerkSmoother::resampleTrajectory(
+  const autoware_planning_msgs::Trajectory & input, const double v_current,
+  const int closest_id) const
+{
+  return resampling::resampleTrajectory(input, v_current, closest_id, base_param_.resample_param);
+}
+
 }  // namespace motion_velocity_smoother

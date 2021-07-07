@@ -44,6 +44,10 @@ public:
     const autoware_planning_msgs::Trajectory & input, autoware_planning_msgs::Trajectory & output,
     std::vector<autoware_planning_msgs::Trajectory> & debug_trajectories) override;
 
+  boost::optional<autoware_planning_msgs::Trajectory> resampleTrajectory(
+    const autoware_planning_msgs::Trajectory & input, const double v_current,
+    const int closest_id) const override;
+
   void setParam(const Param & smoother_param);
 
 private:

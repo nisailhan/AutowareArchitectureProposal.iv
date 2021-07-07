@@ -75,7 +75,7 @@ autoware_planning_msgs::TrajectoryPoint calcInterpolatedTrajectoryPoint(
   auto v1 = getTransVector3(
     trajectory.points.at(segment_idx).pose, trajectory.points.at(segment_idx + 1).pose);
   auto v2 = getTransVector3(trajectory.points.at(segment_idx).pose, target_pose);
-  const double prop = v1.dot(v2) / v1.length2();  // calc internal proportion
+  const double prop = std::max(0.0, std::min(1.0, v1.dot(v2) / v1.length2()));  // calc internal proportion
 
   auto interpolate = [&prop](double x1, double x2) { return prop * x1 + (1.0 - prop) * x2; };
 

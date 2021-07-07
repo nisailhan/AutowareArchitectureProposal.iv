@@ -154,6 +154,7 @@ void MotionVelocitySmoother::onDynamicReconfigure(
       p.over_v_weight = config.over_v_weight;
       p.over_a_weight = config.over_a_weight;
       p.over_j_weight = config.over_j_weight;
+      p.jerk_filter_ds = config.jerk_filter_ds;
       std::dynamic_pointer_cast<JerkFilteredSmoother>(smoother_)->setParam(p);
       break;
     }
@@ -247,6 +248,7 @@ JerkFilteredSmoother::Param MotionVelocitySmoother::getJerkFilteredSmootherParam
   pnh_.param<double>("over_v_weight", param.over_v_weight, 100000.0);
   pnh_.param<double>("over_a_weight", param.over_a_weight, 5000.0);
   pnh_.param<double>("over_j_weight", param.over_j_weight, 2000.0);
+  pnh_.param<double>("jerk_filter_ds", param.jerk_filter_ds, 0.1);
   return param;
 }
 
@@ -373,18 +375,19 @@ void MotionVelocitySmoother::onCurrentTrajectory(
   }
 
   // Get the nearest point
-  const auto output_closest = autoware_utils::findNearestIndex(
+  const auto output_closest_idx = autoware_utils::findNearestIndex(
     output.points, current_pose_ptr_->pose, node_param_.delta_yaw_threshold);
   const auto output_closest_point =
     trajectory_utils::calcInterpolatedTrajectoryPoint(output, current_pose_ptr_->pose);
-  if (!output_closest) {
-    ROS_WARN_THROTTLE(5.0, "[MotionVelocitySmoother] Cannot find closest waypoint for output trajectory");
+  if (!output_closest_idx) {
+    ROS_WARN_THROTTLE(
+      5.0, "[MotionVelocitySmoother] Cannot find closest waypoint for output trajectory");
     return;
   }
 
   // Resample the optimized trajectory
   auto output_resampled = resampling::resampleTrajectory(
-    output, current_velocity_ptr_->twist.linear.x, *output_closest,
+    output, current_velocity_ptr_->twist.linear.x, *output_closest_idx,
     node_param_.post_resample_param);
   if (!output_resampled) {
     ROS_WARN("[MotionVelocitySmoother] Failed to get the resampled output trajectory");
@@ -401,7 +404,7 @@ void MotionVelocitySmoother::onCurrentTrajectory(
   publishTrajectory(*output_resampled);
 
   // publish debug message
-  publishStopDistance(output, *output_closest);
+  publishStopDistance(output, *output_closest_idx);
   publishClosestState(output_closest_point);
 
   prev_output_ = output;
@@ -430,7 +433,8 @@ autoware_planning_msgs::Trajectory MotionVelocitySmoother::calcTrajectoryVelocit
   const auto input_closest = autoware_utils::findNearestIndex(
     traj_input.points, current_pose_ptr_->pose, node_param_.delta_yaw_threshold);
   if (!input_closest) {
-    ROS_WARN_THROTTLE(5.0, "[MotionVelocitySmoother] Cannot find the closest point from input trajectory");
+    ROS_WARN_THROTTLE(
+      5.0, "[MotionVelocitySmoother] Cannot find the closest point from input trajectory");
     return prev_output_;
   }
 
@@ -718,21 +722,30 @@ void MotionVelocitySmoother::overwriteStopPoint(
   autoware_planning_msgs::Trajectory & output) const
 {
   const auto stop_idx = autoware_utils::searchZeroVelocityIndex(input.points);
+  if (!stop_idx) {
+    return;
+  }
+
+  // Get Closest Point from Output
+  const auto nearest_output_point_idx = autoware_utils::findNearestIndex(
+    output.points, input.points.at(*stop_idx).pose, std::numeric_limits<double>::max(),
+    node_param_.delta_yaw_threshold);
 
   // check over velocity
   bool is_stop_velocity_exceeded = false;
   double input_stop_vel;
   double output_stop_vel;
-  if (stop_idx) {
-    double optimized_stop_point_vel = output.points.at(*stop_idx).twist.linear.x;
+  if (nearest_output_point_idx) {
+    double optimized_stop_point_vel = output.points.at(*nearest_output_point_idx).twist.linear.x;
     is_stop_velocity_exceeded = (optimized_stop_point_vel > over_stop_velocity_warn_thr_);
-    input_stop_vel = input.points.at(*stop_idx).twist.linear.x;
-    output_stop_vel = output.points.at(*stop_idx).twist.linear.x;
-    trajectory_utils::applyMaximumVelocityLimit(*stop_idx, output.points.size(), 0.0, output);
+    input_stop_vel = input.points.at(*nearest_output_point_idx).twist.linear.x;
+    output_stop_vel = output.points.at(*nearest_output_point_idx).twist.linear.x;
+    trajectory_utils::applyMaximumVelocityLimit(
+      *nearest_output_point_idx, output.points.size(), 0.0, output);
     ROS_DEBUG(
       "[MotionVelocitySmoother] replan : input_stop_idx = %lu, stop velocity : input = %f, output "
       "= %f, thr = %f",
-      *stop_idx, input_stop_vel, output_stop_vel, over_stop_velocity_warn_thr_);
+      *nearest_output_point_idx, input_stop_vel, output_stop_vel, over_stop_velocity_warn_thr_);
   } else {
     input_stop_vel = -1.0;
     output_stop_vel = -1.0;

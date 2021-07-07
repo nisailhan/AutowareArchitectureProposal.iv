@@ -38,6 +38,7 @@ public:
     double over_v_weight;
     double over_a_weight;
     double over_j_weight;
+    double jerk_filter_ds;
   };
 
   explicit JerkFilteredSmoother(const Param & p);
@@ -46,6 +47,10 @@ public:
     const double initial_vel, const double initial_acc,
     const autoware_planning_msgs::Trajectory & input, autoware_planning_msgs::Trajectory & output,
     std::vector<autoware_planning_msgs::Trajectory> & debug_trajectories) override;
+
+  boost::optional<autoware_planning_msgs::Trajectory> resampleTrajectory(
+    const autoware_planning_msgs::Trajectory & input, const double v_current,
+    const int closest_id) const override;
 
   void setParam(const Param & param);
 

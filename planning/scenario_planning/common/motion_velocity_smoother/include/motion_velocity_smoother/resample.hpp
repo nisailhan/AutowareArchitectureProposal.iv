@@ -42,5 +42,8 @@ boost::optional<autoware_planning_msgs::Trajectory> resampleTrajectory(
   const autoware_planning_msgs::Trajectory & input, const double v_current, const size_t closest_id,
   const ResampleParam & param);
 
+boost::optional<autoware_planning_msgs::Trajectory> resampleTrajectory(
+  const autoware_planning_msgs::Trajectory & input, const double v_current, const size_t closest_id,
+  const ResampleParam & param, const double nominal_ds);
 }  // namespace resampling
 }  // namespace motion_velocity_smoother
