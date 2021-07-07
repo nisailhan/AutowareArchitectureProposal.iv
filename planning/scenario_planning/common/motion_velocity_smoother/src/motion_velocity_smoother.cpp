@@ -481,14 +481,6 @@ autoware_planning_msgs::Trajectory MotionVelocitySmoother::calcTrajectoryVelocit
     return prev_output_;
   }
 
-  // Validation
-  const auto output_closest = autoware_utils::findNearestIndex(
-    output.points, current_pose_ptr_->pose, node_param_.delta_yaw_threshold);
-  if (!output_closest) {
-    ROS_WARN("[MotionVelocitySmoother] Cannot find the closest point from the output trajectory");
-    return prev_output_;
-  }
-
   // for reverse velocity
   if (is_reverse) {
     for (auto & pt : output.points) {
@@ -556,18 +548,6 @@ bool MotionVelocitySmoother::smoothVelocity(
     traj_smoothed.points.begin(), traj_resampled->points.begin(),
     traj_resampled->points.begin() + *traj_resampled_closest);
 
-  if (!debug_trajectories.empty()) {
-    for (auto & debug_trajectory : debug_trajectories) {
-      debug_trajectory.points.insert(
-        debug_trajectory.points.begin(), traj_resampled->points.begin(),
-        traj_resampled->points.begin() + *traj_resampled_closest);
-      for (size_t i = 0; i < *traj_resampled_closest; ++i) {
-        debug_trajectory.points.at(i).twist.linear.x =
-          debug_trajectory.points.at(*traj_resampled_closest).twist.linear.x;
-      }
-    }
-  }
-
   // Set 0 velocity after input-stop-point
   overwriteStopPoint(*traj_resampled, traj_smoothed);
 
@@ -589,6 +569,18 @@ bool MotionVelocitySmoother::smoothVelocity(
   if (publish_debug_trajs_) {
     pub_trajectory_latacc_filtered_.publish(*traj_lateral_acc_filtered);
     pub_trajectory_resampled_.publish(*traj_resampled);
+
+    if (!debug_trajectories.empty()) {
+      for (auto & debug_trajectory : debug_trajectories) {
+        debug_trajectory.points.insert(
+          debug_trajectory.points.begin(), traj_resampled->points.begin(),
+          traj_resampled->points.begin() + *traj_resampled_closest);
+        for (size_t i = 0; i < *traj_resampled_closest; ++i) {
+          debug_trajectory.points.at(i).twist.linear.x =
+            debug_trajectory.points.at(*traj_resampled_closest).twist.linear.x;
+        }
+      }
+    }
     publishDebugTrajectories(debug_trajectories);
   }
 
@@ -610,7 +602,9 @@ void MotionVelocitySmoother::insertBehindVelocity(
     } else {
       const auto prev_output_point =
         trajectory_utils::calcInterpolatedTrajectoryPoint(prev_output_, output.points.at(i).pose);
-      output.points.at(i).twist.linear.x = prev_output_point.twist.linear.x;
+
+      // output should be always positive: TODO(Horibe) think better way
+      output.points.at(i).twist.linear.x = std::abs(prev_output_point.twist.linear.x);
       output.points.at(i).accel.linear.x = prev_output_point.accel.linear.x;
     }
   }
