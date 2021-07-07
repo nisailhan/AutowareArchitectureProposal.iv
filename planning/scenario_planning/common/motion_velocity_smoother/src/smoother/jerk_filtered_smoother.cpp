@@ -47,8 +47,7 @@ bool JerkFilteredSmoother::apply(
   output = input;
 
   if (input.points.empty()) {
-    ROS_WARN(
-      "[JerkFilteredSmoother] Input Trajectory to the jerk filtered optimization is empty.");
+    ROS_WARN("[JerkFilteredSmoother] Input Trajectory to the jerk filtered optimization is empty.");
     return false;
   }
 
@@ -155,7 +154,9 @@ bool JerkFilteredSmoother::apply(
   }
 
   for (size_t i = 0; i < N; ++i) {
-    q[IDX_B0 + i] = -1.0;  // |v_max^2 - b| -> minimize (-bi) * ds
+    double v_max = std::max(v_max_arr.at(i), 0.1);
+    q[IDX_B0 + i] =
+      -1.0 / (v_max * v_max);  // |v_max_i^2 - b_i|/v_max^2 -> minimize (-bi) * ds / v_max^2
     if (i < N - 1) {
       q[IDX_B0 + i] *= std::max(interval_dist_arr.at(i), 0.0001);
     }
@@ -315,7 +316,7 @@ autoware_planning_msgs::Trajectory JerkFilteredSmoother::forwardJerkFilter(
       v = v_lim;
       a = 0.0;
     }
-    if (v <= 0.0) {
+    if (v < 0.0) {
       v = a = 0.0;
     }
   };
@@ -333,8 +334,14 @@ autoware_planning_msgs::Trajectory JerkFilteredSmoother::forwardJerkFilter(
     const double max_dt = std::pow(6.0 * ds / j_max, 1.0 / 3.0);  // assuming v0 = a0 = 0.
     const double dt = std::min(ds / std::max(current_vel, 1.0e-6), max_dt);
 
-    current_acc = std::min(current_acc + j_max * dt, a_max);
-    current_vel = current_vel + current_acc * dt;
+    if (current_acc + j_max * dt >= a_max) {
+      double tmp_jerk = std::min((a_max - current_acc) / dt, j_max);
+      current_vel = current_vel + current_acc * dt + 0.5 * tmp_jerk * dt * dt;
+      current_acc = a_max;
+    } else {
+      current_vel = current_vel + current_acc * dt + 0.5 * j_max * dt * dt;
+      current_acc = current_acc + j_max * dt;
+    }
     applyLimits(current_vel, current_acc, i);
     output.points.at(i).twist.linear.x = current_vel;
     output.points.at(i).accel.linear.x = current_acc;
@@ -350,6 +357,9 @@ autoware_planning_msgs::Trajectory JerkFilteredSmoother::backwardJerkFilter(
   std::reverse(input_rev.points.begin(), input_rev.points.end());
   auto filtered = forwardJerkFilter(v0, a0, -a_min, -j_min, input_rev);
   std::reverse(filtered.points.begin(), filtered.points.end());
+  for (size_t i = 0; i < filtered.points.size(); ++i) {
+    filtered.points.at(i).accel.linear.x *= -1.0;  // Deceleration
+  }
   return filtered;
 }
 
@@ -374,6 +384,7 @@ autoware_planning_msgs::Trajectory JerkFilteredSmoother::mergeFilteredTrajectory
     while (getVx(backward_filtered, i) < current_vel && current_vel <= getVx(forward_filtered, i) &&
            i < merged.points.size() - 1) {
       merged.points.at(i).twist.linear.x = current_vel;
+      merged.points.at(i).accel.linear.x = current_acc;
 
       const double ds = autoware_utils::calcDistance2d(
         forward_filtered.points.at(i + 1), forward_filtered.points.at(i));
@@ -381,8 +392,14 @@ autoware_planning_msgs::Trajectory JerkFilteredSmoother::mergeFilteredTrajectory
         std::pow(6.0 * ds / std::fabs(j_min), 1.0 / 3.0);  // assuming v0 = a0 = 0.
       const double dt = std::min(ds / std::max(current_vel, 1.0e-6), max_dt);
 
-      current_acc = std::max(current_acc + j_min * dt, a_min);
-      current_vel = current_vel + current_acc * dt;
+      if (current_acc + j_min * dt < a_min) {
+        double tmp_jerk = std::max((a_min - current_acc) / dt, j_min);
+        current_vel = current_vel + current_acc * dt + 0.5 * tmp_jerk * dt * dt;
+        current_acc = std::max(current_acc + tmp_jerk * dt, a_min);
+      } else {
+        current_vel = current_vel + current_acc * dt + 0.5 * j_min * dt * dt;
+        current_acc = current_acc + j_min * dt;
+      }
       ++i;
     }
   }
