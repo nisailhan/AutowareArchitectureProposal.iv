@@ -146,6 +146,10 @@ AvoidancePlanningData AvoidanceModule::calcAvoidancePlanningData() const
   ROS_DEBUG("object_candidate.size() = %lu", objects_candidate.objects.size());
   ROS_DEBUG("lane_filtered_objects_index.size() = %lu", lane_filtered_objects_index.size());
 
+  // for goal
+  const bool is_goal_included =
+    planner_data_->route_handler->isInGoalRouteSection(expanded_lanelets.back());
+
   // for filtered objects
   for (const auto & i : lane_filtered_objects_index) {
     const auto & object = objects_candidate.objects.at(i);
@@ -171,6 +175,17 @@ AvoidancePlanningData AvoidanceModule::calcAvoidancePlanningData() const
     if (object_data.longitudinal > parameters_.object_check_forward_distance) {
       ROS_DEBUG("object > forward_distance. Ignore this object.");
       continue;
+    }
+
+    // object is ahead goal
+    if (is_goal_included) {
+      const auto goal_pose = planner_data_->route_handler->getGoalPose();
+      const double goal_dist =
+        calcSignedArcLength(data.reference_path.points, getEgoPosition(), goal_pose.position);
+      if (object_data.longitudinal > goal_dist) {
+        ROS_DEBUG("object > goal_distance. Ignore this object.");
+        continue;
+      }
     }
 
     // target object closest-footprint in Frenet coordinate
@@ -216,7 +231,6 @@ AvoidancePlanningData AvoidanceModule::calcAvoidancePlanningData() const
 
 std::vector<ShiftPoint> AvoidanceModule::calcShiftPointsInFrenet(DebugData & debug) const
 {
-
   /*
    * NOTE: this logic is under development, and will be cleaned up after logic fix.
    */
@@ -791,8 +805,8 @@ void AvoidanceModule::clipPathLength(PathWithLaneId & path) const
   const auto start_idx = util::getIdxByArclength(path, getEgoPosition(), -backward);
   const auto end_idx = util::getIdxByArclength(path, getEgoPosition(), forward);
 
-  const std::vector<PathPointWithLaneId> clipped_points{
-    path.points.begin() + start_idx, path.points.begin() + end_idx};
+  const std::vector<PathPointWithLaneId> clipped_points{path.points.begin() + start_idx,
+                                                        path.points.begin() + end_idx};
 
   path.points = clipped_points;
 }
@@ -857,7 +871,7 @@ TurnSignalInfo AvoidanceModule::calcTurnSignalInfo(const ShiftedPath & path) con
 
   // Set turn signal if the shift length is larger than threshold.
   // TODO(Horibe) Turn signal should be turned on only when the vehicle across the lane.
-  const auto tl_on_threshold = 0.3; // [m]
+  const auto tl_on_threshold = 0.3;  // [m]
   if (!path.shift_length.empty()) {
     if (isAvoidancePlanRunning()) {
       const double diff = path.shift_length.at(latest_shift_point.end_idx) -
