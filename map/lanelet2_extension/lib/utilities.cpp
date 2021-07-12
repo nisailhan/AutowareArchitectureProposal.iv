@@ -309,10 +309,25 @@ lanelet::ConstLineString3d getCenterlineWithOffset(
 lanelet::ConstLanelet getExpandedLanelet(
   const lanelet::ConstLanelet & lanelet_obj, const double left_offset, const double right_offset)
 {
-  const auto & expanded_left_bound_2d =
-    lanelet::geometry::offset(lanelet_obj.leftBound2d().basicLineString(), left_offset);
-  const auto & expanded_right_bound_2d =
-    lanelet::geometry::offset(lanelet_obj.rightBound2d().basicLineString(), right_offset);
+  using lanelet::geometry::offsetNoThrow;
+  using lanelet::geometry::internal::checkForInversion;
+
+  const auto & orig_left_bound_2d = lanelet_obj.leftBound2d().basicLineString();
+  const auto & orig_right_bound_2d = lanelet_obj.rightBound2d().basicLineString();
+
+  // Note: The lanelet::geometry::offset throws exception when the undesired inversion is found.
+  // Use offsetNoThrow until the logic is updated to handle the inversion.
+  // TODO(Horibe) update
+  const auto & expanded_left_bound_2d = offsetNoThrow(orig_left_bound_2d, left_offset);
+  const auto & expanded_right_bound_2d = offsetNoThrow(orig_right_bound_2d, right_offset);
+  try {
+    checkForInversion(orig_left_bound_2d, expanded_left_bound_2d, left_offset);
+    checkForInversion(orig_right_bound_2d, expanded_right_bound_2d, right_offset);
+  } catch (const lanelet::GeometryError & e) {
+    ROS_ERROR(
+      "Fail to expand lanelet. output may be undesired. Lanelet points interval in map data could "
+      "be too narrow.");
+  }
 
   const auto toPoints3d = [](const lanelet::BasicLineString2d & ls2d, const double z) {
     lanelet::Points3d output;
