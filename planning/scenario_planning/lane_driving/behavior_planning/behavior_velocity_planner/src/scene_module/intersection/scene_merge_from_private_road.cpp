@@ -25,7 +25,7 @@ namespace bg = boost::geometry;
 
 MergeFromPrivateRoadModule::MergeFromPrivateRoadModule(
   const int64_t module_id, const int64_t lane_id, std::shared_ptr<const PlannerData> planner_data,
-  const IntersectionModule::PlannerParam & planner_param)
+  const PlannerParam & planner_param)
 : SceneModuleInterface(module_id), lane_id_(lane_id)
 {
   planner_param_ = planner_param;
@@ -59,8 +59,8 @@ bool MergeFromPrivateRoadModule::modifyPathVelocity(
   std::vector<lanelet::CompoundPolygon3d> conflicting_areas;
 
   util::getObjectivePolygons(
-    lanelet_map_ptr, routing_graph_ptr, lane_id_, planner_param_, &conflicting_areas,
-    &detection_areas);
+    lanelet_map_ptr, routing_graph_ptr, lane_id_, planner_param_.intersection_param,
+    &conflicting_areas, &detection_areas);
   if (detection_areas.empty()) {
     ROS_DEBUG("[MergeFromPrivateRoad] no detection area. skip computation.");
     return true;
@@ -72,8 +72,8 @@ bool MergeFromPrivateRoadModule::modifyPathVelocity(
   int judge_line_idx = -1;
   int first_idx_inside_lane = -1;
   if (!util::generateStopLine(
-        lane_id_, conflicting_areas, planner_data_, planner_param_, path, *path, &stop_line_idx,
-        &judge_line_idx, &first_idx_inside_lane)) {
+        lane_id_, conflicting_areas, planner_data_, planner_param_.intersection_param, path, *path,
+        &stop_line_idx, &judge_line_idx, &first_idx_inside_lane)) {
     ROS_WARN_DELAYED_THROTTLE(1.0, "[MergeFromPrivateRoadModule::run] setStopLineIdx fail");
     return false;
   }
@@ -93,7 +93,7 @@ bool MergeFromPrivateRoadModule::modifyPathVelocity(
   /* set stop speed */
   if (state_machine_.getState() == State::STOP) {
     constexpr double stop_vel = 0.0;
-    const double decel_vel = planner_param_.decel_velocity;
+    const double decel_vel = planner_param_.intersection_param.decel_velocity;
     double v = (has_traffic_light_ && turn_direction_ == "straight") ? decel_vel : stop_vel;
     util::setVelocityFrom(stop_line_idx, v, path);
 
@@ -108,7 +108,9 @@ bool MergeFromPrivateRoadModule::modifyPathVelocity(
     const double distance =
       planning_utils::calcDist2d(current_pose.pose, path->points.at(stop_line_idx).point.pose);
     constexpr double distance_threshold = 2.0;
-    if (distance < distance_threshold && planner_data_->isVehicleStopped())
+    if (
+      distance < distance_threshold &&
+      planner_data_->isVehicleStopped(planner_param_.stop_duration_sec))
       state_machine_.setState(State::GO);
 
     return true;

@@ -71,6 +71,7 @@ CrosswalkModuleManager::CrosswalkModuleManager() : SceneModuleManagerInterface(g
   auto & wp = walkway_planner_param_;
   pnh.param(ns + "/walkway/stop_margin", wp.stop_margin, 1.0);
   pnh.param(ns + "/walkway/stop_line_distance", wp.stop_line_distance, 1.5);
+  pnh.param(ns + "/walkway/stop_duration_sec", wp.stop_duration_sec, 1.0);
   pnh.param(ns + "/walkway/external_input_timeout", wp.external_input_timeout, 1.0);
 }
 

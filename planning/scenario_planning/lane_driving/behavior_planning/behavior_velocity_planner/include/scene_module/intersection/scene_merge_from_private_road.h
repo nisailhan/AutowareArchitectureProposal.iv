@@ -96,9 +96,15 @@ public:
   };
 
 public:
+  struct PlannerParam
+  {
+    IntersectionModule::PlannerParam intersection_param;
+    double stop_duration_sec;
+  };
+
   MergeFromPrivateRoadModule(
     const int64_t module_id, const int64_t lane_id, std::shared_ptr<const PlannerData> planner_data,
-    const IntersectionModule::PlannerParam & planner_param);
+    const PlannerParam & planner_param);
 
   /**
    * @brief plan go-stop velocity at traffic crossing with collision check between reference path
@@ -116,7 +122,7 @@ private:
   bool has_traffic_light_;
 
   // Parameter
-  IntersectionModule::PlannerParam planner_param_;
+  PlannerParam planner_param_;
 
   StateMachine state_machine_;  //! for state
 

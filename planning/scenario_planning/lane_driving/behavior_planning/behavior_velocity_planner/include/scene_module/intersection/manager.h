@@ -44,7 +44,8 @@ public:
   const char * getModuleName() override { return "intersection"; }
 
 private:
-  IntersectionModule::PlannerParam planner_param_;
+  IntersectionModule::PlannerParam intersection_param_;
+  MergeFromPrivateRoadModule::PlannerParam merge_from_private_area_param_;
 
   void launchNewModules(const autoware_planning_msgs::PathWithLaneId & path) override;
 
