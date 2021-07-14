@@ -467,9 +467,11 @@ VelocityController::Motion VelocityController::calcCtrlCmd(
     ctrl_cmd = calcEmergencyCtrlCmd(control_data.dt);
   }
 
-  // debug values for vel and acc
+  // apply slope compensation and filter acceleration and jerk
   const double filtered_acc_cmd = calcFilteredAcc(ctrl_cmd.acc, control_data);
-  return ctrl_cmd;
+  const Motion filtered_ctrl_cmd{ctrl_cmd.vel, filtered_acc_cmd};
+
+  return filtered_ctrl_cmd;
 }
 
 // Do not use closest_idx here
