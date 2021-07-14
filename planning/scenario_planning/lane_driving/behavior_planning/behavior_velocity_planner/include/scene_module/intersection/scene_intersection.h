@@ -195,7 +195,7 @@ private:
   bool isTargetCollisionVehicleType(const autoware_perception_msgs::DynamicObject & object) const;
 
   /**
-   * @brief check if the object has a terget type for stuck check
+   * @brief check if the object has a target type for stuck check
    * @param object target object
    * @return true if the object has a target type
    */
