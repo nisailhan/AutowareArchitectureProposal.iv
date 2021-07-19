@@ -376,7 +376,7 @@ void MotionVelocitySmoother::onCurrentTrajectory(
 
   // Get the nearest point
   const auto output_closest_idx = autoware_utils::findNearestIndex(
-    output.points, current_pose_ptr_->pose, node_param_.delta_yaw_threshold);
+    output.points, current_pose_ptr_->pose, std::numeric_limits<double>::max(), node_param_.delta_yaw_threshold);
   const auto output_closest_point =
     trajectory_utils::calcInterpolatedTrajectoryPoint(output, current_pose_ptr_->pose);
   if (!output_closest_idx) {
@@ -431,7 +431,7 @@ autoware_planning_msgs::Trajectory MotionVelocitySmoother::calcTrajectoryVelocit
 
   // Extract trajectory around self-position with desired forward-backward length
   const auto input_closest = autoware_utils::findNearestIndex(
-    traj_input.points, current_pose_ptr_->pose, node_param_.delta_yaw_threshold);
+    traj_input.points, current_pose_ptr_->pose, std::numeric_limits<double>::max(), node_param_.delta_yaw_threshold);
   if (!input_closest) {
     ROS_WARN_THROTTLE(
       5.0, "[MotionVelocitySmoother] Cannot find the closest point from input trajectory");
@@ -464,7 +464,7 @@ autoware_planning_msgs::Trajectory MotionVelocitySmoother::calcTrajectoryVelocit
 
   // Change trajectory velocity to zero when current_velocity == 0 & stop_dist is close
   const auto traj_extracted_closest = autoware_utils::findNearestIndex(
-    traj_extracted->points, current_pose_ptr_->pose, node_param_.delta_yaw_threshold);
+    traj_extracted->points, current_pose_ptr_->pose, std::numeric_limits<double>::max(), node_param_.delta_yaw_threshold);
   if (!traj_extracted_closest) {
     ROS_WARN("[MotionVelocitySmoother] Cannot find the closest point from extracted trajectory");
     return prev_output_;
@@ -503,7 +503,7 @@ bool MotionVelocitySmoother::smoothVelocity(
 
   // Resample trajectory with ego-velocity based interval distance
   const auto traj_pre_resampled_closest = autoware_utils::findNearestIndex(
-    traj_lateral_acc_filtered->points, current_pose_ptr_->pose, node_param_.delta_yaw_threshold);
+    traj_lateral_acc_filtered->points, current_pose_ptr_->pose, std::numeric_limits<double>::max(), node_param_.delta_yaw_threshold);
   auto traj_resampled = smoother_->resampleTrajectory(
     *traj_lateral_acc_filtered, current_velocity_ptr_->twist.linear.x, *traj_pre_resampled_closest);
   if (!traj_resampled) {
@@ -524,7 +524,7 @@ bool MotionVelocitySmoother::smoothVelocity(
   double initial_acc;
   InitializeType type;
   const auto traj_resampled_closest = autoware_utils::findNearestIndex(
-    traj_resampled->points, current_pose_ptr_->pose, node_param_.delta_yaw_threshold);
+    traj_resampled->points, current_pose_ptr_->pose, std::numeric_limits<double>::max(), node_param_.delta_yaw_threshold);
   if (!traj_resampled_closest) {
     ROS_WARN("[MotionVelocitySmoother] Cannot find closest waypoint for resampled trajectory");
     return false;
@@ -765,7 +765,7 @@ void MotionVelocitySmoother::applyExternalVelocityLimit(
     0, traj.points.size(), max_velocity_with_deceleration_, traj);
 
   const auto closest_idx = autoware_utils::findNearestIndex(
-    traj.points, current_pose_ptr_->pose, node_param_.delta_yaw_threshold);
+    traj.points, current_pose_ptr_->pose, std::numeric_limits<double>::max(), node_param_.delta_yaw_threshold);
   if (!closest_idx) return;
 
   double dist = 0.0;
