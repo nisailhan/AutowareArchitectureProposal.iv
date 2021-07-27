@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(ndt_omp)
 
-# should use march=native ?
+# -mavx causes a lot of errors!!
 add_definitions(-std=c++14 -msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2)
 set(CMAKE_CXX_FLAGS "-std=c++14 -msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2")
 
