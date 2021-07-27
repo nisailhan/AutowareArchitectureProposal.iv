@@ -45,6 +45,7 @@
 #include <autoware_vehicle_msgs/ShiftStamped.h>
 #include <autoware_vehicle_msgs/Steering.h>
 #include <autoware_vehicle_msgs/TurnSignal.h>
+#include <autoware_vehicle_msgs/VehicleCommand.h>
 
 class PacmodInterface
 {
@@ -71,6 +72,7 @@ private:
   ros::Subscriber turn_signal_cmd_sub_;
   ros::Subscriber engage_cmd_sub_;
   ros::Subscriber actuation_cmd_sub_;
+  ros::Subscriber vehicle_cmd_sub_;
 
   // From Pacmod
   message_filters::Subscriber<pacmod_msgs::SystemRptFloat> steer_wheel_rpt_sub_;
@@ -155,9 +157,9 @@ private:
   ros::Time last_shift_inout_matched_time_;
 
   /* callbacks */
-  void callbackEmergency(const std_msgs::Bool::ConstPtr & msg);
   void callbackActuationCmd(const autoware_vehicle_msgs::ActuationCommandStamped::ConstPtr & msg);
   void callbackControlCmd(const autoware_control_msgs::ControlCommandStamped::ConstPtr & msg);
+  void callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommand::ConstPtr & msg);
   void callbackShiftCmd(const autoware_vehicle_msgs::ShiftStamped::ConstPtr & msg);
   void callbackTurnSignalCmd(const autoware_vehicle_msgs::TurnSignal::ConstPtr & msg);
   void callbackEngage(const std_msgs::BoolConstPtr & msg);

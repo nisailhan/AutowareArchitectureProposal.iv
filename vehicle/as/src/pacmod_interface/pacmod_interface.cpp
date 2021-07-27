@@ -79,8 +79,6 @@ PacmodInterface::PacmodInterface()
 
   /* subscribers */
   // From autoware
-  emergency_sub_ =
-    nh_.subscribe("/system/emergency/is_emergency", 1, &PacmodInterface::callbackEmergency, this);
   control_cmd_sub_ =
     nh_.subscribe("/control/control_cmd", 1, &PacmodInterface::callbackControlCmd, this);
   shift_cmd_sub_ = nh_.subscribe("/control/shift_cmd", 1, &PacmodInterface::callbackShiftCmd, this);
@@ -89,6 +87,8 @@ PacmodInterface::PacmodInterface()
   engage_cmd_sub_ = nh_.subscribe("/vehicle/engage", 1, &PacmodInterface::callbackEngage, this);
   actuation_cmd_sub_ =
     nh_.subscribe("/vehicle/actuation_cmd", 1, &PacmodInterface::callbackActuationCmd, this);
+  vehicle_cmd_sub_ =
+    nh_.subscribe("/control/vehicle_cmd", 1, &PacmodInterface::callbackVehicleCmd, this);
 
   // From pacmod
   steer_wheel_rpt_sub_.subscribe(nh_, "/pacmod/parsed_tx/steer_rpt", 1);
@@ -139,16 +139,17 @@ void PacmodInterface::run()
   }
 }
 
-void PacmodInterface::callbackEmergency(const std_msgs::Bool::ConstPtr & msg)
-{
-  is_emergency_ = msg->data;
-}
-
 void PacmodInterface::callbackActuationCmd(
   const autoware_vehicle_msgs::ActuationCommandStamped::ConstPtr & msg)
 {
   actuation_command_received_time_ = ros::Time::now();
   actuation_cmd_ptr_ = msg;
+}
+
+void PacmodInterface::callbackVehicleCmd(
+  const autoware_vehicle_msgs::VehicleCommand::ConstPtr & msg)
+{
+  is_emergency_ = (msg->emergency == 1);
 }
 
 void PacmodInterface::callbackControlCmd(
